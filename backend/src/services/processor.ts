@@ -649,8 +649,12 @@ export class ProcessorService {
           rowNumber: validRowNumbers[i],
           columnName: 'account_number',
           cellValue: account || null,
-          errorMessage: `Account ${account} not found in Accounts master (rule ${rule})`,
-          errorType: 'ACCOUNT_NOT_FOUND',
+          // Same rule IDs and wording as python/rule_validation.py (Tiya's validator)
+          errorMessage:
+            fileType === 'PAYMENTS'
+              ? `Account does not exist in accounts master (rule ${rule})`
+              : `Account Number not in Accounts master (rule ${rule})`,
+          errorType: fileType === 'PAYMENTS' ? 'M-ACCOUNT-REF' : 'M-N2',
           rawRowData: record as Prisma.InputJsonValue,
           status: 'PENDING',
           aiSuggestion: null,

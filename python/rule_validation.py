@@ -445,23 +445,20 @@ def validate_transactions(df, filename, accounts, issues):
                 add_issue(issues, dataset, "B-TXN-TYPE", int(idx) + 2, "transaction_type",
                           val, "Transaction type must be debit or credit", filename=filename)
 
+    
     if "account_number" in df and accounts is not None and "account_number" in accounts:
-        known = set(norm(accounts["account_number"]).str.upper())
+        account_numbers = norm(accounts["account_number"]).str.upper().tolist()
+
         for idx, val in norm(df["account_number"]).str.upper().items():
-            if val and val not in known:
-                add_issue(issues, dataset, "M-ACCOUNT-REF", int(idx) + 2,
-                          "account_number", val, "Account does not exist in accounts master",
-                          filename=filename)
-            elif val and accounts is not None:
-                # Active-account rule: only if a unique matching master row is available.
-                matches = accounts[norm(accounts["account_number"]).str.upper().eq(val)]
-                if not matches.empty and "account_status" in matches:
-                    statuses = set(norm(matches["account_status"]).str.lower())
-                    if statuses and "active" not in statuses:
-                        add_issue(issues, dataset, "B-ACCOUNT-ACTIVE", int(idx) + 2,
-                                  "account_number", val, "Transaction references an account that is not active",
-                                  filename=filename)
+            if val and val not in account_numbers:
+                add_issue(
+                    issues, dataset, "M-N2", int(idx) + 2,
+                    "account_number", val,
+                    "Account Number not in Accounts master",
+                    filename=filename
+                )
     return df
+
 
 
 def validate_payments(df, filename, accounts, issues):
