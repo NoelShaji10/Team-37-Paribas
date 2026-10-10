@@ -10,6 +10,23 @@ export interface PredictionResult {
   estimatedSeconds: number;
 }
 
+/** One Layer 2 anomaly flag, exactly as the ML service returns it. */
+export interface AnomalyFlag {
+  row_number: number | null; // real file row number; null for file-level flags
+  level: 'RECORD' | 'FILE';
+  anomaly_type: string; // e.g. HIGH_VALUE_TXN, TXN_VELOCITY, RATE_JUMP
+  rule_ref: string; // workbook ID, e.g. T-N14, R-N10
+  score: number; // 0..1
+  method: string; // RULE | ROBUST_Z | SIGMA_Z | IFOREST
+  explanation: string;
+}
+
+interface FlagsResponse {
+  fileId?: string;
+  count: number;
+  flags: AnomalyFlag[];
+}
+
 export interface SuggestionResult {
   suggestedValue: string | null;
   confidence: number;
@@ -19,6 +36,7 @@ export interface SuggestionResult {
 export class MLClient {
   private readonly baseUrl: string;
   private readonly timeoutMs = 5000;
+  private readonly batchTimeoutMs = 30000; // batches of rows take longer than a single call
 
   constructor() {
     this.baseUrl =
@@ -57,6 +75,54 @@ export class MLClient {
         isAnomaly: false,
         score: 0,
       };
+    }
+  }
+
+  /**
+   * Layer 2: row-level anomaly checks for one batch of VALID rows.
+   * rowNumbers are the real file row numbers of the rows sent (same order).
+   */
+  async detectAnomalyBatch(
+    fileId: string,
+    fileType: string,
+    rows: Array<Record<string, unknown>>,
+    rowNumbers: number[]
+  ): Promise<AnomalyFlag[]> {
+    if (rows.length === 0) return [];
+    try {
+      const response = await this.post<FlagsResponse>(
+        '/anomaly/detect-batch',
+        { fileId, fileType, rows, rowNumbers },
+        this.batchTimeoutMs
+      );
+      return response.flags;
+    } catch (error) {
+      logger.warn(
+        `[MLClient] Anomaly batch failed for file=${fileId}; continuing without flags`,
+        error
+      );
+      return [];
+    }
+  }
+
+  /**
+   * Layer 2: file-wide checks (velocity, near-duplicates, rates series).
+   * Call once after the last batch of a file.
+   */
+  async finishAnomalies(fileId: string): Promise<AnomalyFlag[]> {
+    try {
+      const response = await this.post<FlagsResponse>(
+        '/anomaly/finish',
+        { fileId },
+        this.batchTimeoutMs
+      );
+      return response.flags;
+    } catch (error) {
+      logger.warn(
+        `[MLClient] Anomaly finish failed for file=${fileId}`,
+        error
+      );
+      return [];
     }
   }
 
@@ -131,13 +197,14 @@ export class MLClient {
    */
   private async post<T>(
     endpoint: string,
-    body: Record<string, unknown>
+    body: Record<string, unknown>,
+    timeoutMs: number = this.timeoutMs
   ): Promise<T> {
     const controller = new AbortController();
 
     const timeout = setTimeout(() => {
       controller.abort();
-    }, this.timeoutMs);
+    }, timeoutMs);
 
     try {
       const response = await fetch(

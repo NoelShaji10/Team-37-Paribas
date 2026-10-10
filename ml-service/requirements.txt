@@ -1,8 +1,23 @@
-fastapi>=0.110.0
-uvicorn[standard]>=0.28.0
-pydantic>=2.0.0
-python-dotenv>=1.0.0
-pandas>=2.0.0
-scikit-learn>=1.4.0
-rapidfuzz>=3.6.0
-requests>=2.31.0
+# ml-service dependencies. Use Python 3.12 (scikit-learn 1.6.1 supports 3.9 to 3.13).
+# Versions are pinned to the set verified on the demo MacBook, so every laptop behaves the same.
+
+# API
+fastapi==0.143.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.0
+python-dotenv==1.2.4
+requests==2.34.2
+
+# Data and ML
+numpy==2.5.3
+pandas==3.0.6
+scikit-learn==1.6.1   # must match the version the committed models were trained with
+joblib==1.6.0
+rapidfuzz==3.14.6
+
+# Explanations for Isolation Forest flags (optional; falls back to robust z without it)
+shap==0.53.0
+
+# Tests
+pytest>=8.0
+httpx>=0.27

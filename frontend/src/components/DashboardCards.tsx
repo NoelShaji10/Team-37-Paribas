@@ -7,50 +7,33 @@ import {
   Hourglass,
 } from "lucide-react";
 
-const metrics = [
-  {
-    title: "Total Files Processed",
-    value: "128",
-    subtitle: "Today",
-    change: "+12%",
-    icon: Files,
-    color: "blue",
-  },
-  {
-    title: "Success Rate",
-    value: "92.2%",
-    subtitle: "Today",
-    change: "+3.1%",
-    icon: CheckCircle2,
-    color: "green",
-  },
-  {
-    title: "Failed Files",
-    value: "10",
-    subtitle: "Today",
-    change: "-2%",
-    icon: CircleX,
-    color: "red",
-  },
-  {
-    title: "Avg. Processing Time",
-    value: "2.8 min",
-    subtitle: "Per file",
-    change: "-18%",
-    icon: Clock3,
-    color: "purple",
-  },
-  {
-    title: "Pending / Queued",
-    value: "6",
-    subtitle: "Waiting to process",
-    change: "In queue",
-    icon: Hourglass,
-    color: "orange",
-  },
-];
+import type { DashboardSummary } from "../types";
+import { formatMs } from "../types";
 
-export default function DashboardCards() {
+function buildMetrics(summary: DashboardSummary | null) {
+  const finished = summary ? summary.completedFiles + summary.needsReviewFiles + summary.failedFiles : 0;
+  const clean = summary ? summary.completedFiles : 0;
+  const pending = summary ? summary.queuedFiles + summary.activeProcessing : 0;
+  return [
+    { title: "Total Files Processed", value: summary ? String(finished) : "—",
+      subtitle: "All time", change: summary ? `${summary.totalFiles} uploaded` : "", icon: Files, color: "blue" },
+    { title: "Success Rate", value: finished ? `${((clean / finished) * 100).toFixed(1)}%` : "—",
+      subtitle: "Loaded with no rejections", change: summary ? `${summary.needsReviewFiles} need review` : "",
+      icon: CheckCircle2, color: "green" },
+    { title: "Failed Files", value: summary ? String(summary.failedFiles) : "—",
+      subtitle: "Processing errors", change: summary ? `${summary.totalAnomalies.toLocaleString()} anomalies flagged` : "",
+      icon: CircleX, color: "red" },
+    { title: "Avg. Processing Time", value: summary ? formatMs(summary.averageProcessingTimeMs) : "—",
+      subtitle: "Per file", change: summary?.worker ? `${summary.worker.maxConcurrentJobs} in parallel` : "",
+      icon: Clock3, color: "purple" },
+    { title: "Pending / Queued", value: summary ? String(pending) : "—",
+      subtitle: "Waiting or running", change: summary ? `${summary.activeProcessing} running` : "",
+      icon: Hourglass, color: "orange" },
+  ];
+}
+
+export default function DashboardCards({ summary }: { summary: DashboardSummary | null }) {
+  const metrics = buildMetrics(summary);
   return (
     <section className="kpi-grid">
       {metrics.map((metric) => {

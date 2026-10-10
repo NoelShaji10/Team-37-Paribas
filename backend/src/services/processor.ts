@@ -8,7 +8,7 @@ import { emitFileProgress } from '../sockets/socket';
 
 import { validatorService } from './validator';
 import { loaderService } from './loader';
-import { mlClient } from './mlClient';
+import { mlClient, AnomalyFlag } from './mlClient';
 
 type CsvRecord = Record<string, string>;
 
@@ -21,6 +21,12 @@ interface ProcessingStats {
 
 export class ProcessorService {
   private readonly batchSize = 500;
+
+  /** File type per file id, for Layer 2 (ACCOUNTS | BANK_TRANSACTIONS | PAYMENTS | RATES). */
+  private readonly fileTypes = new Map<string, string>();
+
+  /** Rows already counted as anomalous, per file (one row can get several flags). */
+  private readonly anomalyRows = new Map<string, Set<number>>();
 
   /**
    * Main processing entry point.
@@ -57,7 +63,7 @@ export class ProcessorService {
       // Mark as PROCESSING
       // ------------------------------------------------
 
-      await prisma.processingFile.update({
+      const processingFile = await prisma.processingFile.update({
         where: {
           id: fileId,
         },
@@ -71,6 +77,10 @@ export class ProcessorService {
           errorMessage: null,
         },
       });
+
+      // Layer 2 needs the file type to pick the right checks and model
+      this.fileTypes.set(fileId, processingFile.fileType);
+      this.anomalyRows.set(fileId, new Set());
 
       emitFileProgress(
         fileId,
@@ -94,6 +104,10 @@ export class ProcessorService {
           filePath,
           fileSizeBytes
         );
+
+      // Layer 2 file-wide checks: velocity, near-duplicates, rates series
+      const fileFlags = await mlClient.finishAnomalies(fileId);
+      await this.recordAnomalies(fileId, fileFlags, stats);
 
       const completedAt =
         new Date();
@@ -168,6 +182,9 @@ export class ProcessorService {
         }
       );
 
+      this.fileTypes.delete(fileId);
+      this.anomalyRows.delete(fileId);
+
       logger.info(
         `[ProcessorService] Completed | ` +
           `file=${fileId} | ` +
@@ -193,6 +210,10 @@ export class ProcessorService {
       logger.error(
         `[ProcessorService] Failed | file=${fileId} | ${message}`
       );
+
+      this.fileTypes.delete(fileId);
+      this.anomalyRows.delete(fileId);
+      await mlClient.finishAnomalies(fileId); // free the ML-side session
 
       try {
         await prisma.processingFile.update({
@@ -377,6 +398,7 @@ export class ProcessorService {
     const validRecords: Array<
       Record<string, unknown>
     > = [];
+    const validRowNumbers: number[] = [];
 
     /**
      * Collect fault logs first,
@@ -469,58 +491,7 @@ export class ProcessorService {
 
       stats.validRows++;
 
-      /**
-       * Sample every 100th valid row for
-       * ML anomaly checking.
-       */
-      if (
-        stats.validRows %
-          100 ===
-        0
-      ) {
-        try {
-          const anomaly =
-            await mlClient.checkAnomaly(
-              fileId,
-              record
-            );
-
-          if (
-            anomaly.isAnomaly
-          ) {
-            stats.anomalyCount++;
-
-            await prisma.anomaly.create({
-              data: {
-                fileId,
-
-                rowNumber,
-
-                anomalyType:
-                  'ML_DETECTED',
-
-                description:
-                  'Potential anomaly detected by ML service',
-
-                details:
-                  record as Prisma.InputJsonValue,
-              },
-            });
-
-            logger.info(
-              `[ProcessorService] Anomaly detected | file=${fileId} | row=${rowNumber}`
-            );
-          }
-        } catch (error) {
-          /**
-           * ML failure should NOT stop
-           * core file processing.
-           */
-          logger.warn(
-            `[ProcessorService] ML anomaly check failed | file=${fileId} | row=${rowNumber}`
-          );
-        }
-      }
+      validRowNumbers.push(rowNumber);
 
       validRecords.push(
         record
@@ -545,6 +516,22 @@ export class ProcessorService {
     }
 
     // ------------------------------------------------
+    // Layer 2 anomaly detection: every valid row, one call per batch
+    // ------------------------------------------------
+
+    const fileType = this.fileTypes.get(fileId);
+
+    if (fileType && validRecords.length > 0) {
+      const flags = await mlClient.detectAnomalyBatch(
+        fileId,
+        fileType,
+        validRecords,
+        validRowNumbers
+      );
+      await this.recordAnomalies(fileId, flags, stats);
+    }
+
+    // ------------------------------------------------
     // Save valid records
     // ------------------------------------------------
 
@@ -555,6 +542,49 @@ export class ProcessorService {
       await loaderService.loadValidRecords(
         fileId,
         validRecords
+      );
+    }
+  }
+
+  /**
+   * Counts flagged rows and saves Layer 2 flags to the Anomaly table.
+   * A database problem never stops file processing.
+   */
+  private async recordAnomalies(
+    fileId: string,
+    flags: AnomalyFlag[],
+    stats: ProcessingStats
+  ): Promise<void> {
+    if (flags.length === 0) return;
+
+    const seen = this.anomalyRows.get(fileId) ?? new Set<number>();
+    for (const flag of flags) {
+      if (flag.row_number !== null && !seen.has(flag.row_number)) {
+        seen.add(flag.row_number);
+        stats.anomalyCount++;
+      }
+    }
+    this.anomalyRows.set(fileId, seen);
+
+    try {
+      await prisma.anomaly.createMany({
+        data: flags.map((flag) => ({
+          fileId,
+          rowNumber: flag.row_number,
+          anomalyType: flag.anomaly_type,
+          description: flag.explanation,
+          score: flag.score,
+          details: {
+            ruleRef: flag.rule_ref,
+            method: flag.method,
+            level: flag.level,
+          },
+        })),
+      });
+    } catch (error) {
+      logger.warn(
+        `[ProcessorService] Could not save ${flags.length} anomaly flags | file=${fileId}`,
+        error
       );
     }
   }

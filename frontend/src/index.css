@@ -2552,3 +2552,66 @@ button {
     height: 40px;
   }
 }
+
+/* ---- Live data additions ---- */
+.status-badge.needs-review {
+  color: #b5760c;
+  background: #fff2d7;
+}
+.progress-fill.needs-review {
+  background: #e6a23c;
+}
+.file-table tbody tr.clickable {
+  cursor: pointer;
+}
+.file-table tbody tr.clickable:hover {
+  background: #f5f8ff;
+}
+.anomaly-summary-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 16px;
+}
+.anomaly-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid #dfe5ee;
+  border-radius: 999px;
+  background: #fff;
+  font-size: 12px;
+  cursor: pointer;
+  text-transform: capitalize;
+}
+.anomaly-chip small {
+  color: #6d7a90;
+  text-transform: none;
+}
+.anomaly-chip.active {
+  border-color: #3978e8;
+  background: #e5f0ff;
+}
+.anomaly-explanation {
+  max-width: 520px;
+  white-space: normal;
+  font-size: 12px;
+}
+.live-banner {
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+}
+.live-banner.error {
+  color: #d43e50;
+  background: #ffe8eb;
+}
+.live-banner.ok {
+  color: #13855c;
+  background: #e0f7eb;
+}
+.upload-input {
+  display: none;
+}
