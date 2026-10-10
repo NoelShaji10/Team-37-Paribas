@@ -1,30 +1,27 @@
+"""Single-value fix suggestion. Accepts the backend's shape (fieldName, originalValue, context) and the
+older shape (field, invalidValue). Uses the same engine as /normalize/suggest."""
+from typing import Any, Dict, Optional
+
 from fastapi import APIRouter
 from pydantic import BaseModel
-from typing import List, Dict, Any
-from app.services.suggestion_engine import suggestion_engine
+
+from app.services.normalizer import normalizer
 
 router = APIRouter()
 
+
 class SuggestionRequest(BaseModel):
-    field: str
-    invalidValue: str
+    fieldName: Optional[str] = None
+    originalValue: Optional[str] = None
+    context: Dict[str, Any] = {}
+    field: Optional[str] = None          # older shape
+    invalidValue: Optional[str] = None   # older shape
 
-class SuggestionResponse(BaseModel):
-    field: str
-    originalValue: str
-    suggestions: List[Dict[str, Any]]
 
-@router.post("/suggest-fix", response_model=SuggestionResponse)
+@router.post("/suggest-fix")
 def suggest_fix(req: SuggestionRequest):
-    if req.field.lower() == "currency":
-        results = suggestion_engine.suggest_currency(req.invalidValue)
-    elif req.field.lower() == "ifsc":
-        results = suggestion_engine.suggest_ifsc(req.invalidValue)
-    else:
-        results = []
-
-    return SuggestionResponse(
-        field=req.field,
-        originalValue=req.invalidValue,
-        suggestions=results
-    )
+    field = req.fieldName or req.field or ""
+    value = req.originalValue if req.originalValue is not None else (req.invalidValue or "")
+    res = normalizer.suggest(field, value, row=req.context)
+    return {"field": field, "originalValue": value, "suggestedValue": res["suggestion"],
+            "confidence": res["confidence"], "explanation": res["explanation"], "source": res["source"]}

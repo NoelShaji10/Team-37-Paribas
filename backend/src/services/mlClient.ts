@@ -27,6 +27,35 @@ interface FlagsResponse {
   flags: AnomalyFlag[];
 }
 
+/** AI normalisation (Tier A) result for one batch. */
+export interface NormalizeResult {
+  rows: Array<Record<string, string>>;
+  changes: Array<{ rowNumber: number; field: string; original: string; normalized: string; rule: string }>;
+  issues: Array<{
+    rowNumber: number;
+    columnName: string;
+    cellValue: string;
+    errorMessage: string;
+    errorType: string;
+    ruleRef: string;
+  }>;
+}
+
+/** One AI-suggested fix (Tier B). suggestion is null when no safe fix exists. */
+export interface FixSuggestion {
+  rowNumber: number | null;
+  columnName: string;
+  suggestion: string | null;
+  confidence: number;
+  source: string;
+  explanation: string;
+}
+
+export interface NormalizationSummary {
+  summary: Record<string, unknown>;
+  proposals: Array<{ column: string; fixKind: string; rows: number; share: number; message: string }>;
+}
+
 export interface SuggestionResult {
   suggestedValue: string | null;
   confidence: number;
@@ -123,6 +152,80 @@ export class MLClient {
         error
       );
       return [];
+    }
+  }
+
+  /**
+   * AI normalisation, Tier A: workbook transformation rules applied to a batch,
+   * plus master-data checks. Returns null if the ML service is unavailable.
+   */
+  async normalizeBatch(
+    fileId: string,
+    fileType: string,
+    rows: Array<Record<string, unknown>>,
+    rowNumbers: number[]
+  ): Promise<NormalizeResult | null> {
+    if (rows.length === 0) return null;
+    try {
+      return await this.post<NormalizeResult>(
+        '/normalize/batch',
+        { fileId, fileType, rows, rowNumbers },
+        this.batchTimeoutMs
+      );
+    } catch (error) {
+      logger.warn(`[MLClient] Normalisation unavailable for file=${fileId}; using raw rows`, error);
+      return null;
+    }
+  }
+
+  /**
+   * AI-suggested fixes, Tier B: one suggestion per rejected value (same order as issues).
+   */
+  async suggestFixes(
+    fileId: string,
+    fileType: string,
+    issues: Array<Record<string, unknown>>
+  ): Promise<FixSuggestion[]> {
+    if (issues.length === 0) return [];
+    try {
+      const response = await this.post<{ suggestions: FixSuggestion[] }>(
+        '/normalize/suggest',
+        { fileId, fileType, issues },
+        this.batchTimeoutMs
+      );
+      return response.suggestions;
+    } catch (error) {
+      logger.warn(`[MLClient] Fix suggestions unavailable for file=${fileId}`, error);
+      return [];
+    }
+  }
+
+  /**
+   * File summary and ">50% rule" proposals. Call once after the last batch.
+   */
+  async finishNormalization(fileId: string): Promise<NormalizationSummary | null> {
+    try {
+      return await this.post<NormalizationSummary>('/normalize/finish', { fileId });
+    } catch (error) {
+      logger.warn(`[MLClient] Normalisation finish failed for file=${fileId}`, error);
+      return null;
+    }
+  }
+
+  /**
+   * Learning from fixes: report what the operator did with a suggestion.
+   */
+  async fixFeedback(feedback: {
+    field: string;
+    original: string;
+    corrected: string | null;
+    accepted: boolean;
+    suggested: string | null;
+  }): Promise<void> {
+    try {
+      await this.post('/normalize/feedback', feedback);
+    } catch (error) {
+      logger.warn('[MLClient] Could not record fix feedback', error);
     }
   }
 

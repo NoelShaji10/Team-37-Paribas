@@ -5,7 +5,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.routes import anomaly, prediction, suggestions
+from app.routes import anomaly, normalize, prediction, suggestions
 
 load_dotenv()
 
@@ -19,6 +19,7 @@ app.add_middleware(
 )
 
 app.include_router(anomaly.router, prefix="/anomaly", tags=["anomaly (Layer 2)"])
+app.include_router(normalize.router, prefix="/normalize", tags=["AI normalisation and fixes"])
 app.include_router(prediction.router, prefix="/prediction", tags=["prediction"])
 app.include_router(suggestions.router, prefix="/suggestions", tags=["suggestions"])
 

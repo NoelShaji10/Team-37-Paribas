@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 import { prisma } from '../db/prisma';
 import { logger } from '../utils/logger';
+import { mlClient } from '../services/mlClient';
 
 /**
  * GET /api/resolutions/pending
@@ -229,6 +230,17 @@ export const resolveRejection = async (
     logger.info(
       `[ResolutionController] Resolved fault=${id} | action=${normalizedAction}`
     );
+
+    // Learning from fixes: tell the ML service what the operator did (fire and forget)
+    if (rejection.columnName && rejection.cellValue !== null) {
+      void mlClient.fixFeedback({
+        field: rejection.columnName,
+        original: rejection.cellValue,
+        corrected: newStatus === 'REJECTED' ? null : resolvedValue,
+        accepted: newStatus !== 'REJECTED',
+        suggested: rejection.aiSuggestion ?? null,
+      });
+    }
 
     // ---------------------------------------------
     // Check if file still has pending issues

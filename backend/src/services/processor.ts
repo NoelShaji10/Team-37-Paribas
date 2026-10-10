@@ -4,7 +4,7 @@ import { Prisma } from '@prisma/client';
 
 import { prisma } from '../db/prisma';
 import { logger } from '../utils/logger';
-import { emitFileProgress } from '../sockets/socket';
+import { emitDashboardAlert, emitFileProgress } from '../sockets/socket';
 
 import { validatorService } from './validator';
 import { loaderService } from './loader';
@@ -108,6 +108,17 @@ export class ProcessorService {
       // Layer 2 file-wide checks: velocity, near-duplicates, rates series
       const fileFlags = await mlClient.finishAnomalies(fileId);
       await this.recordAnomalies(fileId, fileFlags, stats);
+
+      // AI normalisation summary + ">50% rule" proposals (one fix for most of a column's errors)
+      const normalization = await mlClient.finishNormalization(fileId);
+      if (normalization) {
+        logger.info(
+          `[ProcessorService] Normalisation summary | file=${fileId} | ${JSON.stringify(normalization.summary)}`
+        );
+        for (const proposal of normalization.proposals) {
+          emitDashboardAlert('NORMALIZATION_PROPOSAL', proposal.message, { fileId, ...proposal });
+        }
+      }
 
       const completedAt =
         new Date();
@@ -213,7 +224,8 @@ export class ProcessorService {
 
       this.fileTypes.delete(fileId);
       this.anomalyRows.delete(fileId);
-      await mlClient.finishAnomalies(fileId); // free the ML-side session
+      await mlClient.finishAnomalies(fileId); // free the ML-side sessions
+      await mlClient.finishNormalization(fileId);
 
       try {
         await prisma.processingFile.update({
@@ -407,7 +419,36 @@ export class ProcessorService {
     const faultLogs: Prisma.FaultLogCreateManyInput[] =
       [];
 
-    for (const record of records) {
+    // Original row per fault, for AI suggestions that need context (same order as faultLogs)
+    const faultRows: Array<Record<string, unknown>> = [];
+
+    // ------------------------------------------------
+    // AI normalisation (Tier A): workbook transformation rules applied before
+    // validation; every change is logged by the ML service. Falls back to the
+    // raw rows if the ML service is unavailable.
+    // ------------------------------------------------
+    const fileType = this.fileTypes.get(fileId) ?? '';
+    const firstRowNumber = stats.processedRows + 2; // CSV line 1 is the header
+    const normalized = await mlClient.normalizeBatch(
+      fileId,
+      fileType,
+      records,
+      records.map((_, i) => firstRowNumber + i)
+    );
+    const workingRows = (normalized?.rows ?? records) as CsvRecord[];
+    const masterIssues = new Map<number, NonNullable<typeof normalized>['issues']>();
+    for (const issue of normalized?.issues ?? []) {
+      const list = masterIssues.get(issue.rowNumber) ?? [];
+      list.push(issue);
+      masterIssues.set(issue.rowNumber, list);
+    }
+    if (normalized && normalized.changes.length > 0) {
+      logger.info(
+        `[ProcessorService] Normalised ${normalized.changes.length} values | file=${fileId}`
+      );
+    }
+
+    for (const [index, record] of workingRows.entries()) {
       stats.processedRows++;
 
       /**
@@ -426,6 +467,21 @@ export class ProcessorService {
         await validatorService.validateRecord(
           record
         );
+
+      // Master-data issues from normalisation (ISO currency list, workbook enums),
+      // skipping columns the validator already reported
+      const reported = new Set(validation.issues.map((i) => i.columnName));
+      for (const issue of masterIssues.get(rowNumber) ?? []) {
+        if (reported.has(issue.columnName)) continue;
+        validation.issues.push({
+          columnName: issue.columnName,
+          cellValue: issue.cellValue,
+          errorMessage: `${issue.errorMessage} (rule ${issue.ruleRef})`,
+          errorType: issue.errorType,
+        });
+        validation.errors.push(issue.errorMessage);
+        validation.isValid = false;
+      }
 
       // ----------------------------------------------
       // Invalid row
@@ -475,11 +531,12 @@ export class ProcessorService {
               issue.errorType,
 
             rawRowData:
-              record as Prisma.InputJsonValue,
+              records[index] as Prisma.InputJsonValue, // original row, before normalisation
 
             status:
               'PENDING',
           });
+          faultRows.push(record);
         }
 
         continue;
@@ -502,6 +559,31 @@ export class ProcessorService {
     // Save rejected rows
     // ------------------------------------------------
 
+    // ------------------------------------------------
+    // AI-suggested fixes (Tier B): stored on each FaultLog for the Resolution
+    // Centre. Suggestions are never applied automatically.
+    // ------------------------------------------------
+    if (faultLogs.length > 0) {
+      const suggestions = await mlClient.suggestFixes(
+        fileId,
+        fileType,
+        faultLogs.map((f, i) => ({
+          rowNumber: f.rowNumber,
+          columnName: f.columnName,
+          cellValue: f.cellValue,
+          errorType: f.errorType,
+          errorMessage: f.errorMessage,
+          row: faultRows[i],
+        }))
+      );
+      suggestions.forEach((s, i) => {
+        if (!faultLogs[i]) return;
+        faultLogs[i].aiSuggestion = s.suggestion;
+        faultLogs[i].aiConfidence = s.suggestion ? s.confidence : null;
+        faultLogs[i].aiExplanation = s.explanation;
+      });
+    }
+
     if (
       faultLogs.length >
       0
@@ -518,8 +600,6 @@ export class ProcessorService {
     // ------------------------------------------------
     // Layer 2 anomaly detection: every valid row, one call per batch
     // ------------------------------------------------
-
-    const fileType = this.fileTypes.get(fileId);
 
     if (fileType && validRecords.length > 0) {
       const flags = await mlClient.detectAnomalyBatch(

@@ -1,0 +1,3 @@
+# Learned fixes are runtime state of the ML service, not source
+fix_memory.json
+fix_memory.json.tmp
