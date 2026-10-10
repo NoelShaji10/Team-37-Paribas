@@ -1,10 +1,10 @@
 {
   "ACCOUNTS": {
     "file": "anomaly_accounts.joblib",
-    "sha256": "eac3e33730530e69f351feecf979baf93ce1c6b14703d167b24fdb047414b8d9",
-    "size_mb": 2.79,
-    "training_rows": 700000,
-    "fitted_at": "2026-10-10T20:35:10",
+    "sha256": "588e14807f5c4dfa13d4c7b970d3abaaba99ccd32445ec0bac3f9a140c23e98a",
+    "size_mb": 2.78,
+    "training_rows": 70000,
+    "fitted_at": "2026-10-10T22:16:05",
     "code_version": "2.0",
     "sklearn_trained": "1.6.1",
     "has_isolation_forest": true,
@@ -25,15 +25,15 @@
       "currency=EUR",
       "currency=other"
     ],
-    "iforest_cutoff": 0.690993595750434,
+    "iforest_cutoff": 0.6863451036463105,
     "groups_with_baselines": 4
   },
   "BANK_TXNS": {
     "file": "anomaly_bank_txns.joblib",
-    "sha256": "842a45563fd5049d8a7000ba62fbd0f1cdd2d5d7272e5a97b737c07bf859eb5a",
-    "size_mb": 4.65,
-    "training_rows": 700000,
-    "fitted_at": "2026-10-10T20:32:31",
+    "sha256": "5c2d07fbb4223e7cfd7edc181a9acf8d9e84008460a1356aa9e316d8bb824511",
+    "size_mb": 4.66,
+    "training_rows": 70000,
+    "fitted_at": "2026-10-10T22:15:36",
     "code_version": "2.0",
     "sklearn_trained": "1.6.1",
     "has_isolation_forest": true,
@@ -50,15 +50,15 @@
       "currency=EUR",
       "currency=other"
     ],
-    "iforest_cutoff": 0.6264147228260161,
+    "iforest_cutoff": 0.6246430511869943,
     "groups_with_baselines": 6
   },
   "PAYMENTS": {
     "file": "anomaly_payments.joblib",
-    "sha256": "91443861b7343903e654cad4d55e9c983059f0f1be2d4ad33ef4e8b639486f6a",
-    "size_mb": 3.68,
-    "training_rows": 700000,
-    "fitted_at": "2026-10-10T20:33:55",
+    "sha256": "15d94eb0b1179fac5fc9833b18e64e4ea8752cd73f402d58ce631f2e8466689e",
+    "size_mb": 3.67,
+    "training_rows": 70000,
+    "fitted_at": "2026-10-10T22:15:53",
     "code_version": "2.0",
     "sklearn_trained": "1.6.1",
     "has_isolation_forest": true,
@@ -80,15 +80,15 @@
       "currency=EUR",
       "currency=other"
     ],
-    "iforest_cutoff": 0.6379251302531088,
+    "iforest_cutoff": 0.6410132739820302,
     "groups_with_baselines": 12
   },
   "RATES": {
     "file": "anomaly_rates.joblib",
-    "sha256": "d16bdbf56741ee27e67d22915829f8979385976f334312a9c6e259ffb9191364",
+    "sha256": "ebde5a8cc1685a218f4e17fae69167c4dddad5b642c780234bb6ecc8764794fa",
     "size_mb": 0.0,
     "training_rows": 1,
-    "fitted_at": "2026-10-10T20:36:11",
+    "fitted_at": "2026-10-10T22:16:13",
     "code_version": "2.0",
     "sklearn_trained": "1.6.1",
     "has_isolation_forest": false,
