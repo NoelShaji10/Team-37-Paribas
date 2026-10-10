@@ -1,0 +1,101 @@
+account_number,account_holder_name,account_type,balance,currency,account_status,ifsc_code
+97884369905,Komal Karmakar,business,1485.06,INR,active,BOBR0000001
+9318079125,Simran Vishnu Gaikwad,business,39735.61,INR,active,KKBK0000001
+55781283552008,Debjani Dutta,business,13072.92,INR,active,KKBK0001111
+07794796151,Jyoti Poddar,business,12702.44,INR,closed,PBRB0003333
+3413583977721,Debashish Neha Dubey,current,35819.8,INR,active,UJVN0000001
+64044848391501,Divya Nandi,business,9053.35,INR,active,FDRL0004444
+418919251,Deepa Patel,checking,56488.34,INR,active,KKBK0005555
+46297396063973,Meena Malhotra,current,9891.06,INR,inactive,ICIC0000001
+806478805423,Suman Rao,business,4290.08,INR,inactive,HSBC0005555
+52983492494641,Ritu Halder,savings,8487.94,INR,active,CNRB0003333
+1651691613,Vivaan Roy,savings,30389.12,INR,active,KKBK0000001
+2079497137414,Sourav Ghosh,current,14009.16,INR,active,CNRB0005555
+64677694328,Rohan Patil,checking,23875.53,INR,active,HSBC0008888
+22730550049832,Sourav Ritu Khanna,checking,14920.17,INR,active,AUBK0005555
+843999794,Amit Kiran Hegde,current,5288.59,INR,active,ICIC0001111
+72227604691,Sunita Supriya More,business,6377.08,INR,closed,ICIC0009999
+711187765260,Debashish Aarav Deshmukh,business,5673.42,INR,active,ESFB0003333
+4477923802,Pranav Karmakar,savings,4788.15,INR,closed,PNB0000001
+3960566854110,Deepak Khanna,current,44921.4,INR,active,RATN0006666
+1672044571762,Vikram Halder,current,10172.18,INR,active,FDRL0009999
+0800732558,Anjali Mahesh Gowda,savings,5221.93,INR,active,PBRB0000001
+564361722542,Nitin Reddy,checking,13720.54,INR,active,UJVN0009999
+114165739,Lakshmi Ray,checking,2080.72,INR,closed,PBRB0002222
+6013393396,Harpreet Reddy,savings,89709.91,INR,active,ESFB0009999
+1151270229240,Vineet Agarwal,business,14536.31,INR,active,AUBK0001111
+84881762665,Rakesh Vikram Nandi,savings,2425.61,INR,active,PBRB0004444
+16326074689199,Neha Rohan Hegde,savings,6286.55,INR,active,CNRB0004444
+06612814282,Ritu Poddar,checking,31509.97,INR,active,HSBC0006666
+26725014293,Rajendra Sunita Tiwari,business,126643.74,INR,active,SBIN0009012
+4225916158,Manoj Mohit Roy,savings,52387.19,INR,active,HDFC0003333
+34297579252066,Lakshmi Subhash Khanna,savings,69982.79,INR,active,ESFB0009999
+875995975439,Pranav Sen,current,7693.46,INR,active,KKBK0006666
+50052676456,Kiran Ankita Mehta,business,25845.72,INR,active,FDRL0005555
+87336138145125,Dinesh Gowda,checking,73283.61,INR,active,CNRB0002222
+03610874708,Ganesh Nair,business,5478.42,INR,active,HDFC0006666
+7991471729777,Rajendra Debashish Bhat,savings,5087.26,INR,suspended,HSBC0009999
+6628656685,Ritu Pranav Singh,current,46973.68,INR,inactive,RATN0000001
+92961900784046,Kiran Sanjay Desai,checking,23458.6,INR,active,UTIB0003333
+96755065679,Aditya Rajesh Srivastava,business,9774.23,INR,active,AUBK0006666
+714962976,Harpreet Das,current,12525.08,INR,active,ICIC0001111
+066549554168,Sneha Kadam,checking,26791.17,INR,inactive,AUBK0009999
+13573308929,Sunita Jyoti Patil,business,1618.66,INR,inactive,RATN0001111
+75502648952,Kavita Anjali Nair,business,20665.51,INR,inactive,UTIB0006666
+24743176099,Prakash Das,checking,19533.78,INR,active,SBIN0008901
+709988276022,Rakesh Tapan Shetty,current,7211.17,INR,active,CNRB0008888
+05410843086314,Gowri Chauhan,savings,99064.8,INR,active,CNRB0001111
+454990115910,Kiran Nandi,savings,7953.75,INR,active,KKBK0004444
+597069523,Aditya Subhash Rao,savings,8231.68,INR,active,SCBL0003333
+3026522346597,Ashok Vivek Chopra,current,106567.4,INR,active,HDFC0007777
+225124620,Gaurav Bhatia,checking,220594.01,INR,active,PNB0004444
+702238351113,Rajeev Chopra,checking,16357.19,INR,active,RATN0005555
+678854938535,Deepak Chauhan HUF,savings,6103.87,INR,inactive,IDFY0007777
+737626874,Mohit Rao,business,18659.32,INR,active,KKBK0009999
+3307899284,Pranav Neha Pal,current,55154.34,INR,active,UTIB0009999
+37761717066744,Harpreet Poddar,checking,38780.89,INR,active,PNB0009999
+215881344,Prakash Menon,business,449790.69,INR,active,PBRB0009999
+0509282667843,Harpreet Ganesh Pawar,current,20414.83,INR,active,KKBK0000001
+889082816,Nandini Kavita Mukherjee,checking,48000.7,INR,active,HDFC0002222
+391752643,Aravind Sen,savings,75996.31,INR,active,HSBC0002222
+680344786,Aravind Balaji Mishra,checking,7369.32,INR,active,ESFB0002222
+1257432139,Jyoti Agarwal,savings,93997.12,INR,active,YESB0006666
+6597062658648,Kavita Halder,business,4011.85,INR,active,IDFY0002222
+234585938015,Rakesh Simran Halder,savings,1949.78,INR,active,BOBR0004444
+118146109,Karthik Verma,savings,12655.3,INR,active,HDFC0006666
+3478668681,Sandeep Vivek Roy,checking,17849.85,INR,active,PNB0007777
+734809813,Komal Reddy,checking,69595.08,INR,active,PNB0004444
+256381459817,Amit Chatterjee,savings,103826.98,INR,active,ICIC0007777
+121243787890,Riya Reddy Ltd,checking,10583.96,INR,active,AUBK0003333
+74607060505633,Simran Sen,savings,31986.0,INR,active,RATN0008888
+37032824291596,Vikram Sanjay Tiwari,checking,15168.54,INR,active,SCBL0006666
+37958633708,Vivaan Ghosh,current,141687.69,INR,active,BOBR0004444
+502024832,Mahesh Riya Rao,checking,59171.76,INR,active,ESFB0006666
+999279148,Meera Poddar,current,67962.13,INR,inactive,UJVN0003333
+44943710824,Jyoti Megha Pillai,business,9126.47,INR,active,PNB0008888
+935351532777,Pranav Debashish Shah,business,20749.34,INR,active,IDFY0004444
+1999880227682,Anjali Roy,checking,52321.68,INR,active,IDFY0000001
+6837733998,Amit Karthik Das,savings,235962.1,INR,active,CNRB0007777
+5300686124,Rajesh Singh,current,68784.57,INR,active,FDRL0004444
+972334114,Anjali Karthik Malhotra,business,15643.59,INR,active,UJVN0006666
+686806082288,Saranya Mehta,current,45569.25,INR,active,HSBC0009999
+64217403718,Rajeev Bhat,business,29061.21,INR,closed,HSBC0004444
+5654159496,Subhash Simran Ghosh,current,21021.07,INR,active,SBIN0008901
+190731628170,Jyoti Shah,business,493444.19,INR,active,HDFC0006666
+046557293733,Sunil Nilesh Ray,savings,2577.58,INR,active,FDRL0005555
+09053332040,Lakshmi Rao,savings,23533.31,INR,active,BOBR0005555
+223776702,Saranya Vikram Karmakar,business,12995.57,INR,closed,HDFC0000001
+1674382035210,Rajendra Chatterjee,current,25122.37,INR,active,PBRB0000001
+474506743644,Mahesh Gaikwad,business,3067.06,INR,active,RATN0005555
+74176012834902,Ritu Pawar Pvt Ltd,current,33498.41,INR,active,SCBL0000001
+6373889921,Debashish Amit Biswas,business,155845.23,INR,active,YESB0008888
+0915476153131,Neha Gowda,savings,24108.68,INR,active,SCBL0007777
+04709591479,Harpreet Pillai,savings,55766.36,INR,active,HDFC0006666
+17163863952070,Amit Sunita Rao,checking,31363.72,INR,active,PBRB0004444
+28883621730,Amit Agarwal,savings,17933.14,INR,active,AUBK0003333
+7390446306978,Sunita Ashok Rao,current,66672.48,INR,active,AUBK0004444
+030226082,Vikram Meera Chatterjee,current,20237.8,INR,active,UJVN0004444
+1501900291,Priya Megha Kadam,checking,136130.68,INR,active,UJVN0002222
+2673950442,Rakesh Vineet Poddar,savings,49744.21,INR,active,ICIC0006666
+94082907036,Rajesh Roy,current,30885.51,INR,active,IDFY0004444
+722319757,Sandeep Menon,business,30515.42,INR,active,ESFB0007777

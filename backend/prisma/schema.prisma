@@ -1,0 +1,196 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum FileStatus {
+  QUEUED
+  PROCESSING
+  COMPLETED
+  FAILED
+  NEEDS_REVIEW
+}
+
+enum FileType {
+  PAYMENTS
+  BANK_TRANSACTIONS
+  ACCOUNTS
+  RATES
+}
+
+enum FaultStatus {
+  PENDING
+  APPROVED
+  EDITED
+  REJECTED
+  SAVED_TO_TARGET
+}
+
+model ProcessingFile {
+  fileName            String            @id
+  originalName        String?
+  storedPath          String
+  fileType            FileType
+  status              FileStatus        @default(QUEUED)
+  sizeBytes           BigInt
+  checksum            String?
+  progress            Float             @default(0)
+  recordCount         Int?
+  totalRows           Int               @default(0)
+  processedRows       Int               @default(0)
+  successfulRows      Int               @default(0)
+  failedRows          Int               @default(0)
+  predictedDurationMs Int?
+  actualDurationMs    Int?
+  errorMessage        String?
+  receivedAt          DateTime          @default(now())
+  startedAt           DateTime?
+  completedAt         DateTime?
+  createdAt           DateTime          @default(now())
+  updatedAt           DateTime          @updatedAt
+
+  faultLogs           FaultLog[]
+  anomalies           Anomaly[]
+  accounts            Account[]
+  bankTransactions    BankTransaction[]
+  payments            Payment[]
+  rates               ExchangeRate[]
+
+  @@index([status])
+  @@index([fileType])
+}
+
+model FaultLog {
+  id             String         @id @default(cuid())
+  fileId         String
+  rowNumber      Int
+  colNumber      Int?
+  columnName     String
+  cellValue      String?
+  errorMessage   String
+  errorType      String?
+  rawRowData     Json?
+  aiSuggestion   String?
+  aiConfidence   Float?
+  aiExplanation  String?
+  status         FaultStatus    @default(PENDING)
+  resolvedValue  String?
+  reviewedBy     String?
+  reviewedAt     DateTime?
+  savedAt        DateTime?
+  targetTable    FileType?
+  targetRecordId String?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  file           ProcessingFile @relation(fields: [fileId], references: [fileName], onDelete: Cascade)
+
+  @@index([fileId, status])
+  @@index([rowNumber])
+  @@index([status])
+  @@index([columnName])
+}
+
+model Anomaly {
+  id          String         @id @default(cuid())
+  fileId      String
+  rowNumber   Int?
+  anomalyType String
+  description String?
+  score       Float?
+  details     Json?
+  reviewed    Boolean        @default(false)
+  createdAt   DateTime       @default(now())
+
+  file        ProcessingFile @relation(fields: [fileId], references: [fileName], onDelete: Cascade)
+
+  @@index([fileId])
+}
+
+model Account {
+  accountNumber     String            @id
+  accountHolderName String
+  accountType       String
+  balance           Decimal           @db.Decimal(18, 4)
+  currency          String            @db.VarChar(3)
+  accountStatus     String
+  ifscCode          String            @db.VarChar(11)
+  fileId            String?
+  createdAt         DateTime          @default(now())
+  updatedAt         DateTime          @updatedAt
+
+  file              ProcessingFile?   @relation(fields: [fileId], references: [fileName], onDelete: SetNull)
+  bankTransactions  BankTransaction[]
+  payments          Payment[]
+
+  @@index([fileId])
+  @@index([currency])
+  @@index([accountStatus])
+  @@index([ifscCode])
+}
+
+model BankTransaction {
+  transactionId   String          @id
+  accountNumber   String
+  transactionDate DateTime
+  transactionType String
+  amount          Decimal         @db.Decimal(18, 4)
+  currency        String          @db.VarChar(3)
+  description     String?
+  ifscCode        String?         @db.VarChar(11)
+  fileId          String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  file            ProcessingFile? @relation(fields: [fileId], references: [fileName], onDelete: SetNull)
+  account         Account?        @relation(fields: [accountNumber], references: [accountNumber], onDelete: Cascade)
+
+  @@index([fileId])
+  @@index([accountNumber])
+  @@index([transactionDate])
+  @@index([transactionType])
+}
+
+model Payment {
+  paymentId     String          @id
+  accountNumber String
+  paymentDate   DateTime
+  paymentMethod String
+  amount        Decimal         @db.Decimal(18, 4)
+  currency      String          @db.VarChar(3)
+  paymentStatus String
+  ifscCode      String?         @db.VarChar(11)
+  fileId        String?
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+
+  file          ProcessingFile? @relation(fields: [fileId], references: [fileName], onDelete: SetNull)
+  account       Account?        @relation(fields: [accountNumber], references: [accountNumber], onDelete: Cascade)
+
+  @@index([fileId])
+  @@index([accountNumber])
+  @@index([paymentDate])
+  @@index([paymentStatus])
+}
+
+model ExchangeRate {
+  id           String          @id @default(cuid())
+  rateId       String
+  currencyPair String          @db.VarChar(7)
+  rateDate     DateTime        @db.Date
+  exchangeRate Decimal         @db.Decimal(18, 8)
+  rateType     String          @db.VarChar(4)
+  fileId       String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+
+  file         ProcessingFile? @relation(fields: [fileId], references: [fileName], onDelete: SetNull)
+
+  @@unique([currencyPair, rateDate, rateType])
+  @@index([fileId])
+  @@index([rateDate, currencyPair])
+  @@index([rateId])
+}
