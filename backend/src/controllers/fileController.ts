@@ -1,14 +1,23 @@
 import { Request, Response } from 'express';
+
+import { prisma } from '../db/prisma';
 import { logger } from '../utils/logger';
 import { ingestionService } from '../services/ingestion';
 import { fileWorker } from '../workers/fileWorker';
 import { emitFileProgress } from '../sockets/socket';
 
 /**
+ * Helper because Prisma BigInt cannot be JSON-stringified directly.
+ */
+function serializeFile<T extends { sizeBytes: bigint }>(file: T) {
+  return {
+    ...file,
+    sizeBytes: file.sizeBytes.toString(),
+  };
+}
+
+/**
  * POST /api/files/upload
- *
- * Receives a file from Multer, registers it through the ingestion service,
- * and places it into the concurrent worker queue.
  */
 export const uploadFile = async (
   req: Request,
@@ -29,24 +38,22 @@ export const uploadFile = async (
       `[FileController] Received file: ${file.originalname}`
     );
 
-    // Ingestion layer creates the initial file/job information.
-    const ingestionResult = await ingestionService.ingestFile(
-      file.path,
-      file.originalname
-    );
+    const ingestionResult =
+      await ingestionService.ingestFile(
+        file.path,
+        file.originalname
+      );
 
     const jobId = `job_${Date.now()}_${Math.random()
       .toString(36)
       .substring(2, 8)}`;
 
-    // Put file into worker pool.
     fileWorker.enqueue({
       jobId,
       fileId: ingestionResult.fileId,
       filePath: file.path,
     });
 
-    // Notify connected dashboard clients.
     emitFileProgress(
       ingestionResult.fileId,
       0,
@@ -61,8 +68,6 @@ export const uploadFile = async (
       `[FileController] File queued | fileId=${ingestionResult.fileId} | jobId=${jobId}`
     );
 
-    // Return immediately.
-    // Actual processing continues in the background worker pool.
     res.status(202).json({
       success: true,
       message: 'File accepted and queued for processing',
@@ -70,45 +75,76 @@ export const uploadFile = async (
         fileId: ingestionResult.fileId,
         jobId,
         fileName: file.originalname,
+        fileType: ingestionResult.fileType,
         status: 'QUEUED',
       },
     });
   } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : 'Failed to ingest file';
+
     logger.error(
       '[FileController] uploadFile error:',
       error
     );
 
+    /**
+     * Duplicate / invalid file errors are client-side problems,
+     * not backend crashes.
+     */
+    if (
+      message.includes('Duplicate file') ||
+      message.includes('Unsupported file format') ||
+      message.includes('Unable to determine file type') ||
+      message.includes('empty')
+    ) {
+      res.status(400).json({
+        success: false,
+        message,
+      });
+      return;
+    }
+
     res.status(500).json({
       success: false,
-      message: 'Failed to ingest file',
+      message,
     });
   }
 };
 
-
 /**
  * GET /api/files
  *
- * Temporary response until Prisma/database integration is ready.
+ * Returns all processing files for dashboard.
  */
 export const getFiles = async (
   _req: Request,
   res: Response
 ): Promise<void> => {
   try {
-    /**
-     * This will later become something like:
-     *
-     * const files = await prisma.file.findMany({
-     *   orderBy: { createdAt: 'desc' }
-     * });
-     */
+    const files =
+      await prisma.processingFile.findMany({
+        orderBy: {
+          createdAt: 'desc',
+        },
+        include: {
+          _count: {
+            select: {
+              faultLogs: true,
+              anomalies: true,
+            },
+          },
+        },
+      });
+
+    const serializedFiles =
+      files.map((file) => serializeFile(file));
 
     res.status(200).json({
       success: true,
-      data: [],
-      message: 'Database integration pending',
+      data: serializedFiles,
     });
   } catch (error) {
     logger.error(
@@ -123,11 +159,10 @@ export const getFiles = async (
   }
 };
 
-
 /**
  * GET /api/files/:id
  *
- * Temporary response until Prisma/database integration is ready.
+ * Returns one file with rejection + anomaly details.
  */
 export const getFileById = async (
   req: Request,
@@ -136,25 +171,46 @@ export const getFileById = async (
   try {
     const { id } = req.params;
 
-    /**
-     * Later:
-     *
-     * const file = await prisma.file.findUnique({
-     *   where: { id },
-     *   include: {
-     *     processingRuns: true,
-     *     validationIssues: true,
-     *     anomalies: true,
-     *   }
-     * });
-     */
+    const file =
+      await prisma.processingFile.findUnique({
+        where: {
+          id,
+        },
+        include: {
+          faultLogs: {
+            orderBy: {
+              rowNumber: 'asc',
+            },
+          },
+
+          anomalies: {
+            orderBy: {
+              createdAt: 'desc',
+            },
+          },
+
+          _count: {
+            select: {
+              accounts: true,
+              bankTransactions: true,
+              payments: true,
+              rates: true,
+            },
+          },
+        },
+      });
+
+    if (!file) {
+      res.status(404).json({
+        success: false,
+        message: 'File not found',
+      });
+      return;
+    }
 
     res.status(200).json({
       success: true,
-      data: {
-        id,
-      },
-      message: 'Database integration pending',
+      data: serializeFile(file),
     });
   } catch (error) {
     logger.error(

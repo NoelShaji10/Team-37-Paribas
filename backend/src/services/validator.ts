@@ -1,145 +1,289 @@
 import { logger } from '../utils/logger';
 
+export interface ValidationIssue {
+  columnName: string;
+  cellValue?: string;
+  errorMessage: string;
+  errorType: string;
+}
+
 export interface ValidationResult {
   isValid: boolean;
+
+  // Kept for compatibility with current processor.ts
   errors: string[];
+
+  // Structured errors for Prisma FaultLog
+  issues: ValidationIssue[];
 }
 
 export class ValidatorService {
   async validateRecord(
     record: Record<string, string>
   ): Promise<ValidationResult> {
-    const errors: string[] = [];
+    const issues: ValidationIssue[] = [];
 
-    // Empty row check
+    /**
+     * Helper for adding validation issues.
+     */
+    const addIssue = (
+      columnName: string,
+      cellValue: string | undefined,
+      errorMessage: string,
+      errorType: string
+    ) => {
+      issues.push({
+        columnName,
+        cellValue,
+        errorMessage,
+        errorType,
+      });
+    };
+
+    // --------------------------------------------------
+    // Empty row
+    // --------------------------------------------------
+
     const hasData = Object.values(record).some(
       (value) => value?.trim() !== ''
     );
 
     if (!hasData) {
-      errors.push('Empty record');
+      addIssue(
+        'row',
+        undefined,
+        'Empty record',
+        'EMPTY_RECORD'
+      );
+
       return {
         isValid: false,
-        errors,
+        errors: ['Empty record'],
+        issues,
       };
     }
 
-    // -------------------------
-    // Amount validation
-    // -------------------------
+    // --------------------------------------------------
+    // Amount
+    // --------------------------------------------------
+
     if ('amount' in record) {
-      const amount = Number(record.amount);
+      const rawAmount = record.amount?.trim();
+      const amount = Number(rawAmount);
 
       if (
-        record.amount.trim() === '' ||
+        !rawAmount ||
         Number.isNaN(amount)
       ) {
-        errors.push(
-          `Invalid amount: ${record.amount}`
+        addIssue(
+          'amount',
+          record.amount,
+          `Invalid amount: ${record.amount}`,
+          'INVALID_AMOUNT'
         );
-      }
-
-      if (!Number.isNaN(amount) && amount < 0) {
-        errors.push(
-          `Amount cannot be negative: ${record.amount}`
+      } else if (amount < 0) {
+        addIssue(
+          'amount',
+          record.amount,
+          `Amount cannot be negative: ${record.amount}`,
+          'NEGATIVE_AMOUNT'
         );
       }
     }
 
-    // -------------------------
-    // Currency validation
-    // -------------------------
+    // --------------------------------------------------
+    // Currency
+    // --------------------------------------------------
+
     if ('currency' in record) {
-      const currency = record.currency
-        ?.trim()
-        .toUpperCase();
+      const currency =
+        record.currency?.trim().toUpperCase();
 
-      if (!/^[A-Z]{3}$/.test(currency)) {
-        errors.push(
-          `Invalid currency code: ${record.currency}`
+      if (!/^[A-Z]{3}$/.test(currency || '')) {
+        addIssue(
+          'currency',
+          record.currency,
+          `Invalid currency code: ${record.currency}`,
+          'INVALID_CURRENCY'
         );
       }
     }
 
-    // -------------------------
-    // IFSC validation
-    // Example: HDFC0001234
-    // -------------------------
-    if ('ifsc' in record) {
-      const ifsc = record.ifsc
-        ?.trim()
-        .toUpperCase();
+    // --------------------------------------------------
+    // IFSC
+    // Supports both possible CSV column names.
+    // --------------------------------------------------
+
+    const ifscColumn =
+      'ifsc_code' in record
+        ? 'ifsc_code'
+        : 'ifsc' in record
+        ? 'ifsc'
+        : null;
+
+    if (ifscColumn) {
+      const rawIfsc = record[ifscColumn];
+      const ifsc =
+        rawIfsc?.trim().toUpperCase();
 
       const ifscPattern =
         /^[A-Z]{4}0[A-Z0-9]{6}$/;
 
-      if (!ifscPattern.test(ifsc)) {
-        errors.push(
-          `Invalid IFSC format: ${record.ifsc}`
+      if (
+        ifsc &&
+        !ifscPattern.test(ifsc)
+      ) {
+        addIssue(
+          ifscColumn,
+          rawIfsc,
+          `Invalid IFSC format: ${rawIfsc}`,
+          'INVALID_IFSC'
         );
       }
     }
 
-    // -------------------------
-    // Date validation
-    // -------------------------
+    // --------------------------------------------------
+    // Date fields
+    // --------------------------------------------------
+
     const dateFields = [
       'transaction_date',
       'payment_date',
       'effective_date',
+      'rate_date',
       'date',
     ];
 
     for (const field of dateFields) {
-      if (field in record && record[field]) {
-        const value = record[field].trim();
+      if (!(field in record)) {
+        continue;
+      }
 
-        const date = new Date(value);
+      const rawValue =
+        record[field]?.trim();
 
-        if (Number.isNaN(date.getTime())) {
-          errors.push(
-            `Invalid date in ${field}: ${value}`
-          );
-        }
+      if (!rawValue) {
+        addIssue(
+          field,
+          record[field],
+          `${field} is missing`,
+          'MISSING_DATE'
+        );
+
+        continue;
+      }
+
+      const parsedDate =
+        new Date(rawValue);
+
+      if (
+        Number.isNaN(
+          parsedDate.getTime()
+        )
+      ) {
+        addIssue(
+          field,
+          rawValue,
+          `Invalid date in ${field}: ${rawValue}`,
+          'INVALID_DATE'
+        );
       }
     }
 
-    // -------------------------
-    // Account number validation
-    // -------------------------
+    // --------------------------------------------------
+    // Account number
+    // --------------------------------------------------
+
     if ('account_number' in record) {
       const accountNumber =
         record.account_number?.trim();
 
       if (!accountNumber) {
-        errors.push(
-          'Account number is missing'
+        addIssue(
+          'account_number',
+          record.account_number,
+          'Account number is missing',
+          'MISSING_ACCOUNT_NUMBER'
         );
       }
     }
 
-    // -------------------------
-    // Transaction ID validation
-    // -------------------------
+    // --------------------------------------------------
+    // Transaction ID
+    // --------------------------------------------------
+
     if ('transaction_id' in record) {
-      if (!record.transaction_id?.trim()) {
-        errors.push(
-          'Transaction ID is missing'
+      const transactionId =
+        record.transaction_id?.trim();
+
+      if (!transactionId) {
+        addIssue(
+          'transaction_id',
+          record.transaction_id,
+          'Transaction ID is missing',
+          'MISSING_TRANSACTION_ID'
         );
       }
     }
 
-    const isValid = errors.length === 0;
+    // --------------------------------------------------
+    // Payment ID
+    // --------------------------------------------------
+
+    if ('payment_id' in record) {
+      const paymentId =
+        record.payment_id?.trim();
+
+      if (!paymentId) {
+        addIssue(
+          'payment_id',
+          record.payment_id,
+          'Payment ID is missing',
+          'MISSING_PAYMENT_ID'
+        );
+      }
+    }
+
+    // --------------------------------------------------
+    // Rate ID
+    // --------------------------------------------------
+
+    if ('rate_id' in record) {
+      const rateId =
+        record.rate_id?.trim();
+
+      if (!rateId) {
+        addIssue(
+          'rate_id',
+          record.rate_id,
+          'Rate ID is missing',
+          'MISSING_RATE_ID'
+        );
+      }
+    }
+
+    // Convert structured issues into old string format
+    const errors =
+      issues.map(
+        (issue) =>
+          issue.errorMessage
+      );
+
+    const isValid =
+      issues.length === 0;
 
     logger.debug(
       `[ValidatorService] Record validation: ${
-        isValid ? 'VALID' : 'INVALID'
+        isValid
+          ? 'VALID'
+          : `INVALID (${issues.length} issues)`
       }`
     );
 
     return {
       isValid,
       errors,
+      issues,
     };
   }
 }

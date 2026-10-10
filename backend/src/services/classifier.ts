@@ -2,7 +2,7 @@ import { logger } from '../utils/logger';
 
 export type FileCategory =
   | 'PAYMENTS'
-  | 'BANK_TXNS'
+  | 'BANK_TRANSACTIONS'
   | 'ACCOUNTS'
   | 'RATES'
   | 'UNKNOWN';
@@ -13,7 +13,10 @@ export class ClassifierService {
     originalName?: string
   ): Promise<FileCategory> {
     const normalizedHeaders = headers.map((header) =>
-      header.trim().toLowerCase().replace(/\s+/g, '_')
+      header
+        .trim()
+        .toLowerCase()
+        .replace(/\s+/g, '_')
     );
 
     const fileName = originalName?.toLowerCase() || '';
@@ -24,21 +27,22 @@ export class ClassifierService {
 
     const scores: Record<FileCategory, number> = {
       PAYMENTS: 0,
-      BANK_TXNS: 0,
+      BANK_TRANSACTIONS: 0,
       ACCOUNTS: 0,
       RATES: 0,
       UNKNOWN: 0,
     };
 
-    // -------------------------
     // Payments
-    // -------------------------
     const paymentHeaders = [
       'payment_id',
       'beneficiary',
       'beneficiary_account',
+      'account_number',
       'ifsc',
+      'ifsc_code',
       'payment_date',
+      'payment_method',
       'payment_status',
       'amount',
       'currency',
@@ -53,43 +57,48 @@ export class ClassifierService {
       scores.PAYMENTS += 3;
     }
 
-    // -------------------------
     // Bank Transactions
-    // -------------------------
     const transactionHeaders = [
       'transaction_id',
       'transaction_date',
       'transaction_type',
       'account_number',
+      'description',
+      'ifsc',
+      'ifsc_code',
       'debit',
       'credit',
       'balance',
       'amount',
+      'currency',
     ];
 
-    scores.BANK_TXNS += this.calculateScore(
+    scores.BANK_TRANSACTIONS += this.calculateScore(
       normalizedHeaders,
       transactionHeaders
     );
 
     if (
       fileName.includes('transaction') ||
+      fileName.includes('transactions') ||
       fileName.includes('txn')
     ) {
-      scores.BANK_TXNS += 3;
+      scores.BANK_TRANSACTIONS += 3;
     }
 
-    // -------------------------
     // Accounts
-    // -------------------------
     const accountHeaders = [
       'account_id',
       'account_number',
       'account_name',
+      'account_holder_name',
       'customer_id',
       'account_type',
       'account_status',
+      'balance',
       'currency',
+      'ifsc',
+      'ifsc_code',
     ];
 
     scores.ACCOUNTS += this.calculateScore(
@@ -101,15 +110,17 @@ export class ClassifierService {
       scores.ACCOUNTS += 3;
     }
 
-    // -------------------------
     // Rates
-    // -------------------------
     const rateHeaders = [
+      'rate_id',
+      'currency_pair',
       'currency_code',
       'currency',
       'exchange_rate',
       'rate',
+      'rate_date',
       'effective_date',
+      'rate_type',
       'base_currency',
       'target_currency',
     ];
@@ -121,27 +132,31 @@ export class ClassifierService {
 
     if (
       fileName.includes('rate') ||
-      fileName.includes('fx')
+      fileName.includes('rates') ||
+      fileName.includes('fx') ||
+      fileName.includes('exchange')
     ) {
       scores.RATES += 3;
     }
 
-    const result = Object.entries(scores)
+    const rankedResults = Object.entries(scores)
       .filter(([type]) => type !== 'UNKNOWN')
-      .sort((a, b) => b[1] - a[1])[0];
+      .sort((a, b) => b[1] - a[1]);
 
-    if (!result || result[1] < 2) {
+    const bestMatch = rankedResults[0];
+
+    if (!bestMatch || bestMatch[1] < 2) {
       logger.warn(
-        `[ClassifierService] Unable to confidently classify file ${originalName || ''}`
+        `[ClassifierService] Unable to confidently classify file=${originalName || 'unknown'}`
       );
 
       return 'UNKNOWN';
     }
 
-    const fileType = result[0] as FileCategory;
+    const fileType = bestMatch[0] as FileCategory;
 
     logger.info(
-      `[ClassifierService] Classified file as ${fileType} with score ${result[1]}`
+      `[ClassifierService] Classified file=${originalName || 'unknown'} as ${fileType} with score=${bestMatch[1]}`
     );
 
     return fileType;
@@ -153,8 +168,8 @@ export class ClassifierService {
   ): number {
     let score = 0;
 
-    for (const header of expectedHeaders) {
-      if (headers.includes(header)) {
+    for (const expectedHeader of expectedHeaders) {
+      if (headers.includes(expectedHeader)) {
         score++;
       }
     }

@@ -1,3 +1,5 @@
+import dashboardRoutes from './routes/dashboard';
+import resolutionRoutes from './routes/resolutions';
 import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -49,6 +51,8 @@ app.get('/health', (_req: Request, res: Response) => {
 
 // API routes
 app.use('/api/files', fileRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/resolutions', resolutionRoutes);
 
 // 404
 app.use((_req: Request, res: Response) => {

@@ -1,83 +1,47 @@
-import { Server } from "socket.io";
-import http from "http";
-
-let io: Server | null = null;
-
-export const initializeSocket = (
-  server: http.Server,
-  frontendUrl: string
-): Server => {
-  io = new Server(server, {
-    cors: {
-      origin: frontendUrl,
-      methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
-      credentials: true,
-    },
-  });
-
-  io.on("connection", (socket) => {
-    console.log(`Socket connected: ${socket.id}`);
-
-    socket.on("disconnect", () => {
-      console.log(`Socket disconnected: ${socket.id}`);
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.initSocket = initSocket;
+exports.getIO = getIO;
+exports.emitFileProgress = emitFileProgress;
+exports.emitDashboardAlert = emitDashboardAlert;
+const socket_io_1 = require("socket.io");
+const logger_1 = require("../utils/logger");
+let io = null;
+function initSocket(server) {
+    const allowedOrigin = process.env.CLIENT_ORIGIN || 'http://localhost:5173';
+    io = new socket_io_1.Server(server, {
+        cors: {
+            origin: [allowedOrigin, 'http://localhost:5173', 'http://127.0.0.1:5173'],
+            methods: ['GET', 'POST'],
+            credentials: true
+        }
     });
-  });
-
-  return io;
-};
-
-export const getIO = (): Server => {
-  if (!io) {
-    throw new Error("Socket.IO has not been initialized");
-  }
-
-  return io;
-};
-
-export const emitFileQueued = (fileId: string) => {
-  getIO().emit("file:queued", {
-    fileId,
-    status: "QUEUED",
-  });
-};
-
-export const emitFileProgress = (
-  fileId: string,
-  progress: number,
-  status: string = "PROCESSING"
-) => {
-  getIO().emit("file:progress", {
-    fileId,
-    progress,
-    status,
-  });
-};
-
-export const emitFileCompleted = (fileId: string) => {
-  getIO().emit("file:completed", {
-    fileId,
-    progress: 100,
-    status: "SUCCESS",
-  });
-};
-
-export const emitFileFailed = (
-  fileId: string,
-  error: string
-) => {
-  getIO().emit("file:failed", {
-    fileId,
-    status: "FAILED",
-    error,
-  });
-};
-
-export const emitAnomalyDetected = (
-  fileId: string,
-  anomalyCount: number
-) => {
-  getIO().emit("file:anomaly", {
-    fileId,
-    anomalyCount,
-  });
-};
+    io.on('connection', (socket) => {
+        logger_1.logger.info(`[Socket.IO] Client connected: ${socket.id}`);
+        socket.on('subscribe_file', (fileId) => {
+            socket.join(`file:${fileId}`);
+            logger_1.logger.info(`[Socket.IO] Client ${socket.id} subscribed to file:${fileId}`);
+        });
+        socket.on('disconnect', () => {
+            logger_1.logger.info(`[Socket.IO] Client disconnected: ${socket.id}`);
+        });
+    });
+    return io;
+}
+function getIO() {
+    if (!io) {
+        throw new Error('Socket.IO has not been initialized. Call initSocket(server) first.');
+    }
+    return io;
+}
+function emitFileProgress(fileId, progress, status, extra = {}) {
+    if (io) {
+        io.emit('file_progress', { fileId, progress, status, ...extra });
+        io.to(`file:${fileId}`).emit('file_detail_update', { fileId, progress, status, ...extra });
+    }
+}
+function emitDashboardAlert(type, message, payload = {}) {
+    if (io) {
+        io.emit('dashboard_alert', { type, message, payload, timestamp: new Date().toISOString() });
+    }
+}
