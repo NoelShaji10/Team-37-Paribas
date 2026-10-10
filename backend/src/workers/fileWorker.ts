@@ -106,4 +106,4 @@ export class FileWorker {
 const maxConcurrentFiles =
   Number(process.env.MAX_CONCURRENT_FILES) || 3;
 
-export const fileWorker = new FileWorker(maxConcurrentFiles);
+export const fileWorker = new FileWorker(maxConcurrentFiles); 
