@@ -1,3 +1,4 @@
+import { startFileWatcher } from './watchers/fileWatcher';
 import dashboardRoutes from './routes/dashboard';
 import resolutionRoutes from './routes/resolutions';
 import express, { NextFunction, Request, Response } from 'express';
@@ -9,6 +10,8 @@ import fileRoutes from './routes/files';
 import { initSocket } from './sockets/socket';
 import { logger } from './utils/logger';
 import { fileWorker } from './workers/fileWorker';
+
+
 
 dotenv.config();
 
@@ -39,6 +42,7 @@ initSocket(server);
 
 // Start file worker pool
 fileWorker.start();
+startFileWatcher();
 
 // Health check
 app.get('/health', (_req: Request, res: Response) => {
