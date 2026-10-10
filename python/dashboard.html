@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>File Processing Time Monitor</title>
+  <style>
+    :root { font-family: Inter, Segoe UI, Arial, sans-serif; color: #172033; background: #f5f7fb; }
+    body { margin: 0; }
+    header { background: #172033; color: white; padding: 22px max(20px, calc((100vw - 1180px)/2)); }
+    header h1 { margin: 0 0 6px; font-size: 24px; }
+    header p { margin: 0; color: #c7d0e0; }
+    main { max-width: 1180px; margin: 24px auto; padding: 0 18px 36px; }
+    .cards { display: grid; grid-template-columns: repeat(auto-fit,minmax(190px,1fr)); gap: 14px; margin-bottom: 18px; }
+    .card, section { background: white; border: 1px solid #e4e8f0; border-radius: 12px; padding: 18px; box-shadow: 0 2px 8px #17203308; }
+    .label { color: #667085; font-size: 13px; }
+    .value { font-size: 27px; font-weight: 700; margin-top: 8px; }
+    .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    button, .upload-label { border: 0; border-radius: 8px; padding: 10px 14px; font-weight: 600; cursor: pointer; background: #2457d6; color: white; }
+    button.secondary { background: #edf1f8; color: #172033; }
+    input[type=file] { max-width: 100%; }
+    .actions { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin: 12px 0; }
+    .notice { color: #667085; font-size: 13px; line-height: 1.5; }
+    .status { display: inline-block; border-radius: 99px; padding: 4px 8px; font-size: 12px; background: #e8f7ee; color: #167647; }
+    .failed { background: #fff0ed; color: #b42318; }
+    .table-wrap { overflow-x: auto; margin-top: 14px; }
+    table { border-collapse: collapse; width: 100%; font-size: 13px; white-space: nowrap; }
+    th, td { padding: 11px 10px; border-bottom: 1px solid #edf0f5; text-align: left; }
+    th { color: #667085; font-weight: 600; background: #fafbfe; }
+    .message { margin: 12px 0; font-size: 14px; white-space: pre-wrap; }
+    canvas { width: 100%; max-height: 300px; }
+    @media (max-width: 600px) { header h1 { font-size: 20px; } main { margin-top: 14px; } }
+  </style>
+</head>
+<body>
+<header>
+  <h1>File Processing Time Monitor</h1>
+  <p>Upload test files, capture processing metadata, and compare predicted vs actual time.</p>
+</header>
+<main>
+  <div class="cards">
+    <div class="card"><div class="label">Files processed</div><div class="value" id="total">—</div></div>
+    <div class="card"><div class="label">Completed</div><div class="value" id="completed">—</div></div>
+    <div class="card"><div class="label">Average processing time</div><div class="value" id="avg">—</div></div>
+    <div class="card"><div class="label">Model status</div><div class="value" id="model" style="font-size:20px">—</div></div>
+  </div>
+
+  <section>
+    <div class="row">
+      <h2 style="margin:0;font-size:18px">Process test files</h2>
+      <button class="secondary" onclick="refreshAll()">Refresh history</button>
+    </div>
+    <div class="actions">
+      <input id="files" type="file" multiple accept=".csv,.json,.xlsx">
+      <button onclick="uploadFiles()">Process selected files</button>
+      <button class="secondary" onclick="trainModel()">Train prediction model</button>
+    </div>
+    <div class="notice">Supported formats: CSV, JSON, XLSX. The current baseline measures parsing and row inspection; it does not yet run the repository's CSV-only validation service or all DQ rules. Files are saved locally in output/dashboard_uploads.</div>
+    <div id="message" class="message"></div>
+  </section>
+
+  <section style="margin-top:18px">
+    <div class="row"><h2 style="margin:0;font-size:18px">Processing duration</h2><span class="notice">Seconds</span></div>
+    <canvas id="chart" width="1100" height="260"></canvas>
+  </section>
+
+  <section style="margin-top:18px">
+    <h2 style="margin:0;font-size:18px">Processing history</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Filename</th><th>Format</th><th>Size</th><th>Rows</th><th>Start time</th><th>End time</th><th>Predicted (s)</th><th>Actual (s)</th><th>Status</th></tr></thead>
+        <tbody id="history"><tr><td colspan="9">Loading…</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+<script>
+let runs = [];
+function fmtSize(bytes) {
+  if (bytes == null) return "—";
+  const units = ["B","KB","MB","GB"]; let n = bytes, i = 0;
+  while (n >= 1024 && i < units.length-1) { n /= 1024; i++; }
+  return `${n.toFixed(i ? 2 : 0)} ${units[i]}`;
+}
+function fmtTime(v) { return v ? new Date(v).toLocaleString() : "—"; }
+function fmtSec(v) { return v == null ? "—" : Number(v).toFixed(4); }
+async function refreshAll() {
+  try {
+    const [summaryRes, runsRes, modelRes] = await Promise.all([
+      fetch("/api/summary"), fetch("/api/runs?limit=200"), fetch("/api/model-status")
+    ]);
+    if (!summaryRes.ok || !runsRes.ok || !modelRes.ok) throw new Error("API request failed");
+    const s = await summaryRes.json(), r = await runsRes.json(), m = await modelRes.json();
+    runs = r.runs || [];
+    document.getElementById("total").textContent = s.total || 0;
+    document.getElementById("completed").textContent = s.completed || 0;
+    document.getElementById("avg").textContent = s.avg_duration == null ? "—" : Number(s.avg_duration).toFixed(3) + " s";
+    document.getElementById("model").textContent = m.model_trained ? "Trained" : "Not trained";
+    const tbody = document.getElementById("history");
+    tbody.innerHTML = "";
+    if (!runs.length) tbody.innerHTML = '<tr><td colspan="9">No runs yet. Select files above to begin.</td></tr>';
+    for (const x of runs) {
+      const tr = document.createElement("tr");
+      const vals = [
+        x.filename, x.file_format, fmtSize(x.size_bytes), x.row_count ?? "—",
+        fmtTime(x.start_time), fmtTime(x.end_time), fmtSec(x.predicted_duration_sec),
+        fmtSec(x.duration_sec), x.status
+      ];
+      vals.forEach((v, i) => {
+        const td = document.createElement("td");
+        if (i === 8) {
+          const span = document.createElement("span");
+          span.className = "status" + (x.status === "completed" ? "" : " failed");
+          span.textContent = v;
+          td.appendChild(span);
+        } else td.textContent = v;
+        tr.appendChild(td);
+      });
+      tbody.appendChild(tr);
+    }
+    drawChart(runs.slice().reverse());
+  } catch (e) { document.getElementById("message").textContent = "Could not load dashboard data: " + e.message; }
+}
+async function uploadFiles() {
+  const input = document.getElementById("files"), message = document.getElementById("message");
+  if (!input.files.length) { message.textContent = "Choose one or more CSV, JSON, or XLSX files first."; return; }
+  message.textContent = "Processing files…";
+  for (const file of input.files) {
+    const form = new FormData(); form.append("file", file);
+    try {
+      const res = await fetch("/api/process", {method:"POST", body:form});
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.detail || "Upload failed");
+      message.textContent = `Processed ${data.filename}: ${data.status}, ${fmtSec(data.duration_sec)} s` + (data.error_message ? `\n${data.error_message}` : "");
+    } catch(e) { message.textContent += `\n${file.name}: ${e.message}`; }
+  }
+  input.value = "";
+  await refreshAll();
+}
+async function trainModel() {
+  const message = document.getElementById("message");
+  message.textContent = "Training model…";
+  const res = await fetch("/api/train", {method:"POST"});
+  const data = await res.json();
+  if (!res.ok) { message.textContent = data.detail || "Training failed"; return; }
+  message.textContent = `Model trained using ${data.training_rows} successful processing runs. ${data.warning}`;
+  await refreshAll();
+}
+function drawChart(data) {
+  const c = document.getElementById("chart"), ctx = c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+  const valid = data.filter(x => x.status === "completed");
+  if (!valid.length) {
+    ctx.fillStyle = "#667085"; ctx.font = "16px Segoe UI"; ctx.fillText("Process files to display timings here.", 20, 35); return;
+  }
+  const max = Math.max(...valid.map(x => Math.max(x.duration_sec || 0, x.predicted_duration_sec || 0)), 0.001) * 1.15;
+  const left = 45, bottom = 220, top = 20, plotW = c.width - 65, plotH = bottom - top;
+  ctx.strokeStyle = "#d9deea"; ctx.lineWidth = 1;
+  for (let i=0;i<=4;i++) {
+    const y = bottom - plotH*i/4;
+    ctx.beginPath(); ctx.moveTo(left,y); ctx.lineTo(c.width-20,y); ctx.stroke();
+    ctx.fillStyle = "#667085"; ctx.font = "11px Segoe UI"; ctx.fillText((max*i/4).toFixed(3), 3, y+4);
+  }
+  const slot = plotW / valid.length, bw = Math.min(24, slot*0.28);
+  valid.forEach((x,i) => {
+    const center = left + slot*(i+0.5);
+    const vals = [{v:x.predicted_duration_sec, color:"#7c8bb5", offset:-bw/2}, {v:x.duration_sec, color:"#2457d6", offset:bw/2}];
+    vals.forEach(a => {
+      if (a.v == null) return;
+      const h = (a.v/max)*plotH, xx = center + a.offset - bw/2;
+      ctx.fillStyle = a.color; ctx.fillRect(xx, bottom-h, bw, h);
+    });
+    ctx.save(); ctx.translate(center, bottom+10); ctx.rotate(-0.35);
+    ctx.fillStyle = "#475467"; ctx.font = "10px Segoe UI";
+    ctx.fillText((x.filename || "").slice(0,20), 0, 0); ctx.restore();
+  });
+  ctx.fillStyle = "#7c8bb5"; ctx.fillRect(c.width-205, 8, 10, 10);
+  ctx.fillStyle = "#475467"; ctx.font = "12px Segoe UI"; ctx.fillText("Predicted", c.width-190, 17);
+  ctx.fillStyle = "#2457d6"; ctx.fillRect(c.width-115, 8, 10, 10);
+  ctx.fillStyle = "#475467"; ctx.fillText("Actual", c.width-100, 17);
+}
+refreshAll();
+</script>
+</body>
+</html>

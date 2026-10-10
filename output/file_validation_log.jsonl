@@ -1,0 +1,1 @@
+{"time": "2026-10-10T18:13:20.892048+00:00", "file": "rates_bad.csv", "quarantined_to": "output\\quarantine\\rates_bad.csv", "error_code": "FILE_HEADER_MISMATCH", "reason": "Header does not match rates schema: missing ['rate_id', 'currency_pair', 'rate_date', 'exchange_rate', 'rate_type']; unexpected ['wrong', 'header']"}

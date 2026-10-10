@@ -1,0 +1,539 @@
+﻿dataset,severity,rule_id,row_number,field,value,issue,filename
+accounts,ERROR,A-ACCOUNT-FORMAT,8,account_number,418919251,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,16,account_number,843999794,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,24,account_number,114165739,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,41,account_number,714962976,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,49,account_number,597069523,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,51,account_number,225124620,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,54,account_number,737626874,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,57,account_number,215881344,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,59,account_number,889082816,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,60,account_number,391752643,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,61,account_number,680344786,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,65,account_number,118146109,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,67,account_number,734809813,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,73,account_number,502024832,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,74,account_number,999279148,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,80,account_number,972334114,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,87,account_number,223776702,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,97,account_number,030226082,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,A-ACCOUNT-FORMAT,101,account_number,722319757,Account number must be 10-20 alphanumeric characters,accounts_sample_100.csv
+accounts,ERROR,R-IFSC-FORMAT,19,ifsc_code,PNB0000001,IFSC must match ^[A-Z]{4}0[A-Z0-9]{6}$,accounts_sample_100.csv
+accounts,ERROR,R-IFSC-FORMAT,51,ifsc_code,PNB0004444,IFSC must match ^[A-Z]{4}0[A-Z0-9]{6}$,accounts_sample_100.csv
+accounts,ERROR,R-IFSC-FORMAT,56,ifsc_code,PNB0009999,IFSC must match ^[A-Z]{4}0[A-Z0-9]{6}$,accounts_sample_100.csv
+accounts,ERROR,R-IFSC-FORMAT,66,ifsc_code,PNB0007777,IFSC must match ^[A-Z]{4}0[A-Z0-9]{6}$,accounts_sample_100.csv
+accounts,ERROR,R-IFSC-FORMAT,67,ifsc_code,PNB0004444,IFSC must match ^[A-Z]{4}0[A-Z0-9]{6}$,accounts_sample_100.csv
+accounts,ERROR,R-IFSC-FORMAT,75,ifsc_code,PNB0008888,IFSC must match ^[A-Z]{4}0[A-Z0-9]{6}$,accounts_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,4,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,7,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,9,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,10,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,18,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,19,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,21,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,29,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,30,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,32,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,34,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,36,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,38,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,41,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,46,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,48,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,53,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,54,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,64,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,72,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,75,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,76,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,78,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,87,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,89,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,94,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-REQUIRED,99,ifsc_code,,Mandatory field ifsc_code is empty,bank_txns_sample_100.csv
+bank_transactions,ERROR,B-FUTURE-DATE,13,transaction_date,2026-10-20 12:53:52,Date is in the future,bank_txns_sample_100.csv
+bank_transactions,ERROR,B-FUTURE-DATE,22,transaction_date,2026-12-31 10:35:51,Date is in the future,bank_txns_sample_100.csv
+bank_transactions,ERROR,B-FUTURE-DATE,55,transaction_date,2026-10-18 07:13:13,Date is in the future,bank_txns_sample_100.csv
+bank_transactions,ERROR,B-FUTURE-DATE,85,transaction_date,2026-10-28 23:17:38,Date is in the future,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-IFSC-FORMAT,13,ifsc_code,PNB0009999,IFSC must match ^[A-Z]{4}0[A-Z0-9]{6}$,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-IFSC-FORMAT,24,ifsc_code,PNB0009999,IFSC must match ^[A-Z]{4}0[A-Z0-9]{6}$,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-IFSC-FORMAT,50,ifsc_code,PNB0009999,IFSC must match ^[A-Z]{4}0[A-Z0-9]{6}$,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-IFSC-FORMAT,58,ifsc_code,PNB0001111,IFSC must match ^[A-Z]{4}0[A-Z0-9]{6}$,bank_txns_sample_100.csv
+bank_transactions,ERROR,R-IFSC-FORMAT,96,ifsc_code,PNB0002222,IFSC must match ^[A-Z]{4}0[A-Z0-9]{6}$,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,2,account_number,7396046438,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,3,account_number,7056500475,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,4,account_number,29902093965699,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,5,account_number,8753155839621,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,6,account_number,418660668585,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,7,account_number,78824669067882,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,8,account_number,718425944,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,9,account_number,5441654058,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,10,account_number,18577875368753,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,11,account_number,2735312582,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,12,account_number,35796412415,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,13,account_number,965391678,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,14,account_number,63881058610,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,15,account_number,2986631243346,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,16,account_number,1041571525,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,17,account_number,068341584,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,18,account_number,12593498981,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,19,account_number,94323930394,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,20,account_number,15383629211023,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,21,account_number,326570505,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,22,account_number,7519217955679,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,23,account_number,93962300302599,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,24,account_number,79173455797084,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,25,account_number,678452149999,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,26,account_number,877923009,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,27,account_number,361191572,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,28,account_number,411328770,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,29,account_number,91537903530,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,30,account_number,64802332231158,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,31,account_number,2072142394,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,32,account_number,41471318185,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,33,account_number,808980884899,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,34,account_number,7328431787961,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,35,account_number,1019063474423,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,36,account_number,415586792905,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,37,account_number,321244677780,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,38,account_number,96688787434612,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,39,account_number,50834993107030,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,40,account_number,783016621372,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,41,account_number,5083823725318,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,42,account_number,73773412943851,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,43,account_number,9129476672357,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,44,account_number,3847132275,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,45,account_number,363982465,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,46,account_number,843816139467,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,47,account_number,8471663349,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,48,account_number,18700624395811,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,49,account_number,57533496317955,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,50,account_number,7667374776,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,51,account_number,54464876736421,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,52,account_number,54139275299,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,53,account_number,7641576738805,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,54,account_number,25744710404682,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,55,account_number,2063075317275,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,56,account_number,7986987413,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,57,account_number,444441454422,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,58,account_number,923778587,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,59,account_number,4149722443137,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,60,account_number,1648496849,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,61,account_number,59734486581,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,62,account_number,54139275299,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,63,account_number,48766748636232,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,64,account_number,0672297579,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,65,account_number,183946308596,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,66,account_number,321244677780,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,67,account_number,69496220067527,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,68,account_number,7693311000501,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,69,account_number,49627881767,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,70,account_number,37192465202,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,71,account_number,76596639009,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,72,account_number,631244593814,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,73,account_number,499453759644,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,74,account_number,99475747570469,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,75,account_number,430644830826,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,76,account_number,284382413967,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,77,account_number,85281580353424,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,78,account_number,84471804144783,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,79,account_number,9082368971,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,80,account_number,70678995059537,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,81,account_number,974379761891,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,82,account_number,98943969429,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,83,account_number,644393215882,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,84,account_number,5846718830,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,85,account_number,6413284733858,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,86,account_number,0542725251989,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,87,account_number,103854302,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,88,account_number,7153523692,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,89,account_number,5119423598,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,90,account_number,974623438077,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,91,account_number,0532716578,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,92,account_number,36012332683604,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,93,account_number,23023854924780,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,94,account_number,234336059,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,95,account_number,04887942926534,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,96,account_number,63021915160132,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,97,account_number,2249867845488,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,98,account_number,48877506702544,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,99,account_number,3115882919,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,100,account_number,837334380,Account does not exist in accounts master,bank_txns_sample_100.csv
+bank_transactions,ERROR,M-ACCOUNT-REF,101,account_number,92626312347,Account does not exist in accounts master,bank_txns_sample_100.csv
+payments,ERROR,R-REQUIRED,2,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,3,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,5,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,6,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,14,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,17,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,24,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,26,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,27,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,28,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,36,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,37,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,38,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,41,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,51,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,54,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,58,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,61,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,62,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,63,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,64,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,65,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,69,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,73,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,75,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,78,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,79,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,81,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,90,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,93,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,94,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,99,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,R-REQUIRED,100,ifsc_code,,Mandatory field ifsc_code is empty,payments_sample_100.csv
+payments,ERROR,B-FUTURE-DATE,74,payment_date,2026-12-18,Date is in the future,payments_sample_100.csv
+payments,ERROR,B-FUTURE-DATE,85,payment_date,2026-11-13,Date is in the future,payments_sample_100.csv
+payments,ERROR,B-PENDING-STALE,9,payment_date,2024-11-13,Pending payment is older than 30 days,payments_sample_100.csv
+payments,ERROR,B-PENDING-STALE,18,payment_date,2024-02-20,Pending payment is older than 30 days,payments_sample_100.csv
+payments,ERROR,B-PENDING-STALE,28,payment_date,2026-02-11,Pending payment is older than 30 days,payments_sample_100.csv
+payments,ERROR,B-PENDING-STALE,31,payment_date,2026-05-06,Pending payment is older than 30 days,payments_sample_100.csv
+payments,ERROR,B-PENDING-STALE,53,payment_date,2024-02-04,Pending payment is older than 30 days,payments_sample_100.csv
+payments,ERROR,B-PENDING-STALE,56,payment_date,2025-03-30,Pending payment is older than 30 days,payments_sample_100.csv
+payments,ERROR,B-PENDING-STALE,62,payment_date,2025-09-27,Pending payment is older than 30 days,payments_sample_100.csv
+payments,ERROR,B-PENDING-STALE,71,payment_date,2024-05-16,Pending payment is older than 30 days,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,2,account_number,2657832927,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,3,account_number,30862143610825,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,4,account_number,4399635279208,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,5,account_number,637961805,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,6,account_number,713074986671,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,7,account_number,842741035828,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,8,account_number,365379634,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,9,account_number,724013920192,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,10,account_number,3740071901,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,11,account_number,50031906049,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,12,account_number,4544673119207,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,13,account_number,984566061141,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,14,account_number,805802247,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,15,account_number,48668558396,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,16,account_number,31497950461,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,17,account_number,196528702466,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,18,account_number,62035159717,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,19,account_number,979365763,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,20,account_number,37192465202,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,21,account_number,835514136671,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,22,account_number,1771070921,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,23,account_number,9705856465223,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,24,account_number,64199190749,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,25,account_number,0672297579,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,26,account_number,3686297173,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,27,account_number,4915671379421,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,28,account_number,356291155743,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,29,account_number,153387151982,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,30,account_number,48766748636232,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,31,account_number,8895204598497,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,32,account_number,805802247,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,33,account_number,3081995127,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,34,account_number,122613251952,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,35,account_number,7428129342700,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,36,account_number,937472474464,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,37,account_number,08136071050,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,38,account_number,9096565478139,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,39,account_number,302543299804,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,40,account_number,2334397919194,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,41,account_number,18700624395811,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,42,account_number,9890767584,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,43,account_number,685816728569,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,44,account_number,4119695606634,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,45,account_number,39392787223444,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,46,account_number,74157947849482,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,47,account_number,49627881767,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,48,account_number,37172382084790,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,49,account_number,9646524728,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,50,account_number,78824669067882,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,51,account_number,758396310771,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,52,account_number,912004720,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,53,account_number,49868300374202,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,54,account_number,767712034,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,55,account_number,7699634296,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,56,account_number,804794058,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,57,account_number,7641576738805,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,58,account_number,82438050967,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,59,account_number,05574682484,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,60,account_number,365379634,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,61,account_number,4054281873453,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,62,account_number,4715408032487,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,63,account_number,32303023896466,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,64,account_number,4149722443137,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,65,account_number,53696426950,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,66,account_number,68501982275,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,67,account_number,0699822389,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,68,account_number,896421504,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,69,account_number,245268073,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,70,account_number,90681376257,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,71,account_number,896421504,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,72,account_number,90310783022944,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,73,account_number,456053338,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,74,account_number,950152128,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,75,account_number,341974837,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,76,account_number,107009091,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,77,account_number,543950703726,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,78,account_number,7428129342700,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,79,account_number,3847132275,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,80,account_number,7258758204865,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,81,account_number,152333256,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,82,account_number,12593498981,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,83,account_number,859083995452,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,84,account_number,10576493930,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,85,account_number,05200941398,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,86,account_number,450514652213,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,87,account_number,3747949164,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,88,account_number,40305147502,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,89,account_number,61081106546603,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,90,account_number,791278097741,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,91,account_number,7056500475,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,92,account_number,2234416118280,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,93,account_number,588003192,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,94,account_number,0882822382930,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,95,account_number,37172382084790,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,96,account_number,739169718995,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,97,account_number,513179864750,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,98,account_number,2654161636,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,99,account_number,36012332683604,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,100,account_number,50527752281951,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,M-ACCOUNT-REF,101,account_number,0760172815,Account does not exist in accounts master,payments_sample_100.csv
+payments,ERROR,P-IFSC-REQUIRED,25,ifsc_code,PNB0007777,Bank transfer requires a valid IFSC code,payments_sample_100.csv
+rates,ERROR,B-RATE-STALE,2,rate_date,2020-01-03,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,3,rate_date,2020-01-03,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,4,rate_date,2020-01-11,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,5,rate_date,2020-01-11,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,6,rate_date,2020-01-14,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,7,rate_date,2020-01-14,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,8,rate_date,2020-01-16,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,9,rate_date,2020-01-16,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,10,rate_date,2020-01-17,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,11,rate_date,2020-01-17,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,12,rate_date,2020-01-19,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,13,rate_date,2020-01-19,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,14,rate_date,2020-01-21,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,15,rate_date,2020-01-21,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,16,rate_date,2020-02-03,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,17,rate_date,2020-02-03,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,18,rate_date,2020-02-08,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,19,rate_date,2020-02-08,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,20,rate_date,2020-02-10,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,21,rate_date,2020-02-10,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,22,rate_date,2020-02-13,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,23,rate_date,2020-02-13,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,24,rate_date,2020-02-14,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,25,rate_date,2020-02-14,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,26,rate_date,2020-02-15,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,27,rate_date,2020-02-15,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,28,rate_date,2020-02-20,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,29,rate_date,2020-02-20,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,30,rate_date,2020-02-22,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,31,rate_date,2020-02-22,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,32,rate_date,2020-02-24,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,33,rate_date,2020-02-24,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,34,rate_date,2020-02-26,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,35,rate_date,2020-02-26,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,36,rate_date,2020-03-03,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,37,rate_date,2020-03-03,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,38,rate_date,2020-03-06,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,39,rate_date,2020-03-06,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,40,rate_date,2020-03-07,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,41,rate_date,2020-03-07,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,42,rate_date,2020-03-08,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,43,rate_date,2020-03-08,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,44,rate_date,2020-03-19,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,45,rate_date,2020-03-19,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,46,rate_date,2020-03-21,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,47,rate_date,2020-03-21,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,48,rate_date,2020-03-23,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,49,rate_date,2020-03-23,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,50,rate_date,2020-03-26,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,51,rate_date,2020-03-26,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,52,rate_date,2020-04-01,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,53,rate_date,2020-04-01,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,54,rate_date,2020-01-06,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,55,rate_date,2020-01-06,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,56,rate_date,2020-01-08,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,57,rate_date,2020-01-08,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,58,rate_date,2020-01-11,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,59,rate_date,2020-01-11,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,60,rate_date,2020-01-13,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,61,rate_date,2020-01-13,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,62,rate_date,2020-01-17,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,63,rate_date,2020-01-17,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,64,rate_date,2020-01-18,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,65,rate_date,2020-01-18,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,66,rate_date,2020-01-20,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,67,rate_date,2020-01-20,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,68,rate_date,2020-01-21,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,69,rate_date,2020-01-21,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,70,rate_date,2020-01-22,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,71,rate_date,2020-01-22,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,72,rate_date,2020-01-26,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,73,rate_date,2020-01-26,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,74,rate_date,2020-01-27,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,75,rate_date,2020-01-27,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,76,rate_date,2020-02-01,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,77,rate_date,2020-02-01,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,78,rate_date,2020-02-07,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,79,rate_date,2020-02-07,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,80,rate_date,2020-02-10,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,81,rate_date,2020-02-10,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,82,rate_date,2020-02-14,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,83,rate_date,2020-02-14,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,84,rate_date,2020-02-17,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,85,rate_date,2020-02-17,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,86,rate_date,2020-02-18,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,87,rate_date,2020-02-18,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,88,rate_date,2020-02-20,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,89,rate_date,2020-02-20,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,90,rate_date,2020-02-21,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,91,rate_date,2020-02-21,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,92,rate_date,2020-03-01,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,93,rate_date,2020-03-01,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,94,rate_date,2020-03-07,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,95,rate_date,2020-03-07,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,96,rate_date,2020-03-08,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,97,rate_date,2020-03-08,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,98,rate_date,2020-03-15,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,99,rate_date,2020-03-15,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,100,rate_date,2020-03-19,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-STALE,101,rate_date,2020-03-19,Rate is older than 7 days,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,54,exchange_rate,91.61576653,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,55,exchange_rate,89.49581012,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,58,exchange_rate,90.92187384,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,59,exchange_rate,90.12031355,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,62,exchange_rate,94.50532834,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,63,exchange_rate,86.89520449,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,66,exchange_rate,94.35005222,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,67,exchange_rate,87.034953,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,74,exchange_rate,94.67424665,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,75,exchange_rate,86.74317802,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,76,exchange_rate,90.81187385,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,77,exchange_rate,90.21931353,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,78,exchange_rate,92.0611831,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,79,exchange_rate,89.09493521,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,80,exchange_rate,91.46221527,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,81,exchange_rate,89.63400626,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,82,exchange_rate,90.82855444,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,83,exchange_rate,90.20430101,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,88,exchange_rate,94.6349809,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,89,exchange_rate,86.77851719,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,92,exchange_rate,90.90323903,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,93,exchange_rate,90.13708487,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,94,exchange_rate,94.20838457,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,95,exchange_rate,87.16245389,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,4,exchange_rate,83.033458,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,5,exchange_rate,82.9698878,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,6,exchange_rate,84.61348925,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,7,exchange_rate,81.54785968,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,10,exchange_rate,87.12202947,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,11,exchange_rate,79.29017347,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,14,exchange_rate,84.11274895,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,15,exchange_rate,81.99852595,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,16,exchange_rate,85.39413901,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,17,exchange_rate,80.84527489,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,18,exchange_rate,84.83633158,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,19,exchange_rate,81.34730158,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,22,exchange_rate,84.93054991,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,23,exchange_rate,81.26250508,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,24,exchange_rate,86.76625837,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,25,exchange_rate,79.61036747,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,28,exchange_rate,84.52181763,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,29,exchange_rate,81.63036413,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,34,exchange_rate,84.86171233,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,35,exchange_rate,81.3244589,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,38,exchange_rate,83.3890069,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,39,exchange_rate,82.64989379,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,44,exchange_rate,83.95059328,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,45,exchange_rate,82.14446605,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,46,exchange_rate,83.83391658,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,47,exchange_rate,82.24947508,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,48,exchange_rate,84.03607329,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,49,exchange_rate,82.06753404,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,52,exchange_rate,83.66341234,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+rates,ERROR,B-RATE-SPREAD,53,exchange_rate,82.4029289,Potential inverted spread: buy rate exceeds sell rate,rates_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,2,payment_id,PAY343046650101,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,3,payment_id,PAYM142614763772,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,4,payment_id,PAYM876655994799,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,5,payment_id,PAYM614816211040,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,6,payment_id,PMT296156459815,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,7,payment_id,PAYM478709149583,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,8,payment_id,PMT215467925762,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,10,payment_id,PAY717278414511,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,12,payment_id,PAYM776073710109,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,13,payment_id,PAY387851815673,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,14,payment_id,PMT360284679169,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,15,payment_id,PMT240902073442,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,16,payment_id,PAY358361723271,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,17,payment_id,PMT516757658740,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,19,payment_id,PAY966964903175,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,20,payment_id,PMT577987266396,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,21,payment_id,PMT677948131740,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,22,payment_id,PAY170838754005,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,23,payment_id,PAYM911830732813,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,24,payment_id,PAY659967304707,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,29,payment_id,PMT928464877449,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,30,payment_id,PMT360816403924,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,32,payment_id,PAY829926333574,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,33,payment_id,PAYM730477501920,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,34,payment_id,PMT410856823558,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,35,payment_id,PMT994279585954,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,36,payment_id,PAY694736098680,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,37,payment_id,PMT608078866882,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,38,payment_id,PMT893546224903,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,40,payment_id,PAY812374841551,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,41,payment_id,PAYM264178916872,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,42,payment_id,PMT736676716985,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,43,payment_id,PAYM996752828992,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,44,payment_id,PMT706113430399,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,45,payment_id,PMT210816585989,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,46,payment_id,PAYM892228046883,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,47,payment_id,PAY227142041289,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,48,payment_id,PAYM956918092987,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,49,payment_id,PAYM819452920838,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,50,payment_id,PAYM357250819569,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,51,payment_id,PMT445332034277,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,52,payment_id,PAY887852346202,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,54,payment_id,PMT619567529588,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,55,payment_id,PMT737556294812,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,58,payment_id,PAY733992926980,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,59,payment_id,PAYM437718271714,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,60,payment_id,PAYM397108696181,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,61,payment_id,PAY232349921725,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,64,payment_id,PAY954812441013,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,67,payment_id,PAY791931392624,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,68,payment_id,PAY766585618912,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,69,payment_id,PMT383077000408,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,72,payment_id,PAY933669518839,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,73,payment_id,PAY606333308880,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,74,payment_id,PAY236450356282,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,75,payment_id,PAYM102740171057,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,76,payment_id,PAYM463960084586,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,77,payment_id,PAYM442367553921,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,78,payment_id,PAYM406631604972,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,79,payment_id,PMT790239386622,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,80,payment_id,PMT185450317734,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,81,payment_id,PAY599164340581,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,82,payment_id,PAY728793254821,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,83,payment_id,PAY544672290569,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,84,payment_id,PMT953775817330,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,85,payment_id,PAYM799676982554,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,86,payment_id,PMT746500661310,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,87,payment_id,PAY406052083880,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,88,payment_id,PAY764821072660,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,89,payment_id,PAY384722895233,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,90,payment_id,PAY163944862674,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,91,payment_id,PAYM769911297218,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,92,payment_id,PMT962355812778,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,93,payment_id,PAY819296762540,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,94,payment_id,PAY179686880901,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,97,payment_id,PAYM277386378178,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,99,payment_id,PAY554044450729,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,100,payment_id,PAY919047791762,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv
+payments,ERROR,B-PAYMENT-RECON,101,payment_id,PMT488781270681,"Completed payment has no matching transaction by account, date and amount",payments_sample_100.csv

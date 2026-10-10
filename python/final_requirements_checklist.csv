@@ -1,0 +1,9 @@
+﻿requirement,status
+Within-file duplicate rows,Checked
+Exact cross-file duplicate rows,Checked; see supplemental report
+Debit/credit amount-sign check,Ran; confirm bank sign convention
+bank_transactions amount limits,Not checked: official limits were not configured
+payments amount limits,Not checked: official limits were not configured
+IFSC existence,Not checked: authoritative ifsc_master.csv not supplied
+ISO currency reference,Checked with pycountry
+Trailer record/count,Not verifiable from these ordinary CSV samples
