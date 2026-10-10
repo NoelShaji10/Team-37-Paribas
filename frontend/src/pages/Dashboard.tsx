@@ -10,17 +10,18 @@ import {
   FileSearch,
   Files,
   LayoutDashboard,
-  ListChecks,
+  RotateCcw,
+  Search,
   Settings,
   ShieldAlert,
   WandSparkles,
-  Search,
-  RotateCcw,
 } from "lucide-react";
 
 import DashboardCards from "../components/DashboardCards";
 import DashboardCharts from "../components/DashboardCharts";
+
 import FileDetails from "./FileDetails";
+import FileMonitoring from "./FileMonitoring";
 import Rejections from "./Rejections";
 import ResolutionCentre from "./ResolutionCentre";
 import Analytics from "./Analytics";
@@ -107,18 +108,29 @@ export default function Dashboard() {
     setStatus("All Statuses");
   };
 
-  const showDashboard =
-    activePage === "Dashboard" ||
-    activePage === "File Monitoring";
+  // Only the Dashboard displays the overview and charts.
+  const showDashboard = activePage === "Dashboard";
 
   const renderPageIcon = () => {
     switch (activePage) {
       case "Analytics":
         return <Activity size={30} />;
+
       case "Master Data":
         return <Database size={30} />;
+
       case "Settings":
         return <Settings size={30} />;
+
+      case "Rejections":
+        return <ShieldAlert size={30} />;
+
+      case "Resolution Centre":
+        return <WandSparkles size={30} />;
+
+      case "File Details":
+        return <FileSearch size={30} />;
+
       default:
         return <Files size={30} />;
     }
@@ -196,7 +208,9 @@ export default function Dashboard() {
               type="button"
               aria-label="Notifications"
               onClick={() =>
-                window.alert("You are all caught up on notifications.")
+                window.alert(
+                  "You are all caught up on notifications."
+                )
               }
             >
               <Bell size={20} />
@@ -211,45 +225,63 @@ export default function Dashboard() {
         </header>
 
         <section className="page-body">
-          {activePage === "File Details" ? (
+          {/* File Details */}
+          {activePage === "File Details" && (
             <FileDetails
               onBack={() => setActivePage("Dashboard")}
             />
-          ) : activePage === "Rejections" ? (
+          )}
+
+          {/* Dedicated File Monitoring page */}
+          {activePage === "File Monitoring" && (
+            <FileMonitoring />
+          )}
+
+          {/* Rejections */}
+          {activePage === "Rejections" && (
             <Rejections
               onBack={() => setActivePage("Dashboard")}
             />
-          ) : activePage === "Resolution Centre" ? (
+          )}
+
+          {/* Resolution Centre */}
+          {activePage === "Resolution Centre" && (
             <ResolutionCentre
               onBack={() => setActivePage("Dashboard")}
             />
-          ) : activePage === "Analytics" ? (
+          )}
+
+          {/* Analytics */}
+          {activePage === "Analytics" && (
             <Analytics
               onBack={() => setActivePage("Dashboard")}
             />
-          ) : activePage === "Master Data" ? (
+          )}
+
+          {/* Master Data */}
+          {activePage === "Master Data" && (
             <MasterData
               onBack={() => setActivePage("Dashboard")}
             />
-          ) : activePage === "Settings" ? (
+          )}
+
+          {/* Settings */}
+          {activePage === "Settings" && (
             <SettingsPage
               onBack={() => setActivePage("Dashboard")}
             />
-          ) : showDashboard ? (
+          )}
+
+          {/* Dashboard overview only */}
+          {showDashboard && (
             <>
-              {/* Overview */}
               <div className="section-heading">
                 <div>
-                  <h2>
-                    {activePage === "Dashboard"
-                      ? "Operations Overview"
-                      : "File Monitoring"}
-                  </h2>
+                  <h2>Operations Overview</h2>
 
                   <p>
-                    {activePage === "Dashboard"
-                      ? "Here's the latest snapshot of file processing activity."
-                      : "Search and track file ingestion, validation and processing progress."}
+                    Here's the latest snapshot of file processing
+                    activity.
                   </p>
                 </div>
 
@@ -265,22 +297,25 @@ export default function Dashboard() {
               {/* Charts */}
               <DashboardCharts />
 
-              {/* File monitoring table */}
+              {/* Recent files table */}
               <section className="panel monitoring-panel">
                 <div className="panel-heading">
                   <div>
-                    <h2>File Monitoring</h2>
+                    <h2>Recent Files</h2>
                     <p>
-                      Track ingestion, validation and processing progress.
+                      Review recent file ingestion and processing
+                      activity.
                     </p>
                   </div>
 
                   <button
                     className="secondary-button"
                     type="button"
-                    onClick={() => setActivePage("File Monitoring")}
+                    onClick={() =>
+                      setActivePage("File Monitoring")
+                    }
                   >
-                    <ListChecks size={17} />
+                    <Files size={17} />
                     View all files
                   </button>
                 </div>
@@ -324,7 +359,9 @@ export default function Dashboard() {
                       setStatus(event.target.value)
                     }
                   >
-                    <option value="All Statuses">All Statuses</option>
+                    <option value="All Statuses">
+                      All Statuses
+                    </option>
                     <option value="Completed">Completed</option>
                     <option value="Processing">Processing</option>
                     <option value="Failed">Failed</option>
@@ -342,7 +379,8 @@ export default function Dashboard() {
                 </div>
 
                 <p className="results-count">
-                  Showing {filteredFiles.length} of {recentFiles.length} files
+                  Showing {filteredFiles.length} of{" "}
+                  {recentFiles.length} files
                 </p>
 
                 <div className="table-wrapper">
@@ -418,8 +456,12 @@ export default function Dashboard() {
 
                       {filteredFiles.length === 0 && (
                         <tr>
-                          <td colSpan={7} className="empty-state">
-                            No files match your search or selected filters.
+                          <td
+                            colSpan={7}
+                            className="empty-state"
+                          >
+                            No files match your search or selected
+                            filters.
                           </td>
                         </tr>
                       )}
@@ -439,14 +481,16 @@ export default function Dashboard() {
                     <h3>Recent Anomalies</h3>
 
                     <p>
-                      Review suspicious transactions, invalid IFSC codes
-                      and data quality issues.
+                      Review suspicious transactions, invalid IFSC
+                      codes and data quality issues.
                     </p>
 
                     <button
                       className="text-button"
                       type="button"
-                      onClick={() => setActivePage("Rejections")}
+                      onClick={() =>
+                        setActivePage("Rejections")
+                      }
                     >
                       Review anomalies →
                     </button>
@@ -479,34 +523,43 @@ export default function Dashboard() {
                 </section>
               </div>
             </>
-          ) : (
-            /* Placeholder for pages not implemented yet */
-            <section className="page-placeholder">
-              <div className="placeholder-icon">
-                {renderPageIcon()}
-              </div>
-
-              <h2>{activePage}</h2>
-
-              <p>
-                {pageDescriptions[activePage] ??
-                  "View file information and processing results."}
-              </p>
-
-              <span className="coming-soon">
-                Page selected · Implementation coming next
-              </span>
-
-              <button
-                className="secondary-button"
-                type="button"
-                onClick={() => setActivePage("Dashboard")}
-              >
-                <LayoutDashboard size={16} />
-                Back to Dashboard
-              </button>
-            </section>
           )}
+
+          {/* Fallback for any unimplemented page */}
+          {!showDashboard &&
+            activePage !== "File Monitoring" &&
+            activePage !== "File Details" &&
+            activePage !== "Rejections" &&
+            activePage !== "Resolution Centre" &&
+            activePage !== "Analytics" &&
+            activePage !== "Master Data" &&
+            activePage !== "Settings" && (
+              <section className="page-placeholder">
+                <div className="placeholder-icon">
+                  {renderPageIcon()}
+                </div>
+
+                <h2>{activePage}</h2>
+
+                <p>
+                  {pageDescriptions[activePage] ??
+                    "View file information and processing results."}
+                </p>
+
+                <span className="coming-soon">
+                  Page selected · Implementation coming next
+                </span>
+
+                <button
+                  className="secondary-button"
+                  type="button"
+                  onClick={() => setActivePage("Dashboard")}
+                >
+                  <LayoutDashboard size={16} />
+                  Back to Dashboard
+                </button>
+              </section>
+            )}
 
           {/* Footer */}
           <footer className="page-footer">

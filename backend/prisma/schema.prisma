@@ -32,7 +32,7 @@ enum FaultStatus {
 model ProcessingFile {
   fileName            String            @id
   originalName        String?
-  storedPath          String
+  storedPath          String?
   fileType            FileType
   status              FileStatus        @default(QUEUED)
   sizeBytes           BigInt

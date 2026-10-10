@@ -1,90 +1,170 @@
 import { Request, Response } from 'express';
 import { logger } from '../utils/logger';
+import { ingestionService } from '../services/ingestion';
+import { fileWorker } from '../workers/fileWorker';
 import { emitFileProgress } from '../sockets/socket';
 
-export const uploadFile = async (req: Request, res: Response): Promise<void> => {
+/**
+ * POST /api/files/upload
+ *
+ * Receives a file from Multer, registers it through the ingestion service,
+ * and places it into the concurrent worker queue.
+ */
+export const uploadFile = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const file = req.file;
+
     if (!file) {
-      res.status(400).json({ success: false, message: 'No file uploaded' });
+      res.status(400).json({
+        success: false,
+        message: 'No file uploaded',
+      });
       return;
     }
 
-    const fileRecord = {
-      id: `file_${Date.now()}`,
-      filename: file.filename || file.originalname,
-      originalName: file.originalname,
-      status: 'PROCESSING',
-      progress: 0,
-      totalRows: 100,
-      processedRows: 0,
-      createdAt: new Date()
-    };
+    logger.info(
+      `[FileController] Received file: ${file.originalname}`
+    );
 
-    logger.info(`[FileController] File uploaded: ${file.originalname}`);
+    // Ingestion layer creates the initial file/job information.
+    const ingestionResult = await ingestionService.ingestFile(
+      file.path,
+      file.originalname
+    );
 
-    // Emit initial realtime progress via Socket.IO
-    emitFileProgress(fileRecord.id, 0, 'PROCESSING');
+    const jobId = `job_${Date.now()}_${Math.random()
+      .toString(36)
+      .substring(2, 8)}`;
 
-    res.status(201).json({ success: true, data: fileRecord });
-  } catch (error) {
-    logger.error('[FileController] uploadFile error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
-  }
-};
+    // Put file into worker pool.
+    fileWorker.enqueue({
+      jobId,
+      fileId: ingestionResult.fileId,
+      filePath: file.path,
+    });
 
-export const getFiles = async (_req: Request, res: Response): Promise<void> => {
-  try {
-    // Starter placeholder list of files
-    const mockFiles = [
+    // Notify connected dashboard clients.
+    emitFileProgress(
+      ingestionResult.fileId,
+      0,
+      'QUEUED',
       {
-        id: 'file_mock_1',
-        filename: 'transactions_october.csv',
-        originalName: 'transactions_october.csv',
-        status: 'PROCESSING',
-        progress: 68.5,
-        totalRows: 500,
-        processedRows: 342,
-        errorCount: 2,
-        createdAt: new Date().toISOString()
-      },
-      {
-        id: 'file_mock_2',
-        filename: 'payroll_batch_sep.csv',
-        originalName: 'payroll_batch_sep.csv',
-        status: 'COMPLETED',
-        progress: 100,
-        totalRows: 1200,
-        processedRows: 1200,
-        errorCount: 0,
-        createdAt: new Date(Date.now() - 3600000).toISOString()
+        fileName: file.originalname,
+        jobId,
       }
-    ];
+    );
 
-    res.json({ success: true, data: mockFiles });
+    logger.info(
+      `[FileController] File queued | fileId=${ingestionResult.fileId} | jobId=${jobId}`
+    );
+
+    // Return immediately.
+    // Actual processing continues in the background worker pool.
+    res.status(202).json({
+      success: true,
+      message: 'File accepted and queued for processing',
+      data: {
+        fileId: ingestionResult.fileId,
+        jobId,
+        fileName: file.originalname,
+        status: 'QUEUED',
+      },
+    });
   } catch (error) {
-    logger.error('[FileController] getFiles error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    logger.error(
+      '[FileController] uploadFile error:',
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to ingest file',
+    });
   }
 };
 
-export const getFileById = async (req: Request, res: Response): Promise<void> => {
+
+/**
+ * GET /api/files
+ *
+ * Temporary response until Prisma/database integration is ready.
+ */
+export const getFiles = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    /**
+     * This will later become something like:
+     *
+     * const files = await prisma.file.findMany({
+     *   orderBy: { createdAt: 'desc' }
+     * });
+     */
+
+    res.status(200).json({
+      success: true,
+      data: [],
+      message: 'Database integration pending',
+    });
+  } catch (error) {
+    logger.error(
+      '[FileController] getFiles error:',
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch files',
+    });
+  }
+};
+
+
+/**
+ * GET /api/files/:id
+ *
+ * Temporary response until Prisma/database integration is ready.
+ */
+export const getFileById = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
   try {
     const { id } = req.params;
-    res.json({
+
+    /**
+     * Later:
+     *
+     * const file = await prisma.file.findUnique({
+     *   where: { id },
+     *   include: {
+     *     processingRuns: true,
+     *     validationIssues: true,
+     *     anomalies: true,
+     *   }
+     * });
+     */
+
+    res.status(200).json({
       success: true,
       data: {
         id,
-        filename: 'transactions_october.csv',
-        status: 'PROCESSING',
-        progress: 68.5,
-        totalRows: 500,
-        processedRows: 342,
-        errorCount: 2
-      }
+      },
+      message: 'Database integration pending',
     });
   } catch (error) {
-    logger.error('[FileController] getFileById error:', error);
-    res.status(500).json({ success: false, message: 'Internal server error' });
+    logger.error(
+      '[FileController] getFileById error:',
+      error
+    );
+
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch file',
+    });
   }
 };

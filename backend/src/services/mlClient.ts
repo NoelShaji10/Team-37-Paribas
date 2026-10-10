@@ -1,46 +1,166 @@
 import { logger } from '../utils/logger';
 
+export interface AnomalyResult {
+  isAnomaly: boolean;
+  score: number;
+  explanation?: string;
+}
+
+export interface PredictionResult {
+  estimatedSeconds: number;
+}
+
+export interface SuggestionResult {
+  suggestedValue: string | null;
+  confidence: number;
+  explanation?: string;
+}
+
 export class MLClient {
-  private baseUrl: string;
+  private readonly baseUrl: string;
+  private readonly timeoutMs = 5000;
 
   constructor() {
-    this.baseUrl = process.env.ML_SERVICE_URL || 'http://localhost:8000';
+    this.baseUrl =
+      process.env.ML_SERVICE_URL || 'http://localhost:8000';
   }
 
-  async checkAnomaly(fileId: string, features: Record<string, unknown>): Promise<{ isAnomaly: boolean; score: number }> {
+  /**
+   * Check whether a record looks anomalous.
+   */
+  async checkAnomaly(
+    fileId: string,
+    features: Record<string, unknown>
+  ): Promise<AnomalyResult> {
     try {
-      logger.info(`[MLClient] Invoking ML service anomaly endpoint for file: ${fileId}`);
-      // Starter fetch call to FastAPI
-      const response = await fetch(`${this.baseUrl}/anomaly/detect`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileId, features })
-      });
+      logger.debug(
+        `[MLClient] Checking anomaly for file=${fileId}`
+      );
 
-      if (!response.ok) {
-        throw new Error(`ML service returned ${response.status}`);
-      }
+      const response = await this.post<AnomalyResult>(
+        '/anomaly/detect',
+        {
+          fileId,
+          features,
+        }
+      );
 
-      return (await response.json()) as { isAnomaly: boolean; score: number };
-    } catch (err) {
-      logger.warn(`[MLClient] Anomaly check fallback due to connection error:`, err);
-      return { isAnomaly: false, score: 0.0 };
+      return response;
+    } catch (error) {
+      logger.warn(
+        `[MLClient] Anomaly service unavailable for file=${fileId}`,
+        error
+      );
+
+      // Don't fail entire file if ML service is temporarily unavailable
+      return {
+        isAnomaly: false,
+        score: 0,
+      };
     }
   }
 
-  async predictProcessingTime(fileSizeMb: number, rowCount: number): Promise<number> {
+  /**
+   * Predict how long a file will take to process.
+   */
+  async predictProcessingTime(
+    fileSizeMb: number,
+    rowCount: number
+  ): Promise<number> {
     try {
-      const response = await fetch(`${this.baseUrl}/prediction/predict-time`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ fileSizeMb, rowCount })
-      });
+      const response =
+        await this.post<PredictionResult>(
+          '/prediction/predict-time',
+          {
+            fileSizeMb,
+            rowCount,
+          }
+        );
 
-      if (!response.ok) return Math.ceil(rowCount / 200);
-      const data = (await response.json()) as { estimatedSeconds: number };
-      return data.estimatedSeconds;
-    } catch {
-      return Math.ceil(rowCount / 200);
+      return response.estimatedSeconds;
+    } catch (error) {
+      logger.warn(
+        '[MLClient] Processing-time prediction unavailable',
+        error
+      );
+
+      // Simple fallback if Python service is down
+      return Math.max(
+        1,
+        Math.ceil(rowCount / 500)
+      );
+    }
+  }
+
+  /**
+   * Ask ML service for a correction suggestion.
+   *
+   * Example:
+   * invalid IFSC -> closest valid IFSC
+   * bad currency -> suggested currency
+   */
+  async suggestFix(
+    fieldName: string,
+    originalValue: string,
+    context: Record<string, unknown> = {}
+  ): Promise<SuggestionResult> {
+    try {
+      return await this.post<SuggestionResult>(
+        '/suggestions/suggest-fix',
+        {
+          fieldName,
+          originalValue,
+          context,
+        }
+      );
+    } catch (error) {
+      logger.warn(
+        `[MLClient] Suggestion service unavailable for field=${fieldName}`,
+        error
+      );
+
+      return {
+        suggestedValue: null,
+        confidence: 0,
+      };
+    }
+  }
+
+  /**
+   * Shared POST helper with timeout.
+   */
+  private async post<T>(
+    endpoint: string,
+    body: Record<string, unknown>
+  ): Promise<T> {
+    const controller = new AbortController();
+
+    const timeout = setTimeout(() => {
+      controller.abort();
+    }, this.timeoutMs);
+
+    try {
+      const response = await fetch(
+        `${this.baseUrl}${endpoint}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error(
+          `ML service returned ${response.status} ${response.statusText}`
+        );
+      }
+
+      return (await response.json()) as T;
+    } finally {
+      clearTimeout(timeout);
     }
   }
 }
