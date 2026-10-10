@@ -1,5 +1,4 @@
-
-import { useState } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 
 import {
   Activity,
@@ -14,6 +13,7 @@ import {
   Search,
   Settings,
   ShieldAlert,
+  Upload,
   WandSparkles,
 } from "lucide-react";
 
@@ -21,12 +21,39 @@ import DashboardCards from "../components/DashboardCards";
 import DashboardCharts from "../components/DashboardCharts";
 
 import FileDetails from "./FileDetails";
+// @ts-expect-error FileMonitoring is a jsx module without ts declaration
 import FileMonitoring from "./FileMonitoring";
 import Rejections from "./Rejections";
 import ResolutionCentre from "./ResolutionCentre";
 import Analytics from "./Analytics";
 import MasterData from "./MasterData";
 import SettingsPage from "./SettingsPage";
+
+import type { DashboardSummary } from "../types";
+import { fetchDashboardSummary, uploadFile } from "../services/api";
+
+const initialSummary: DashboardSummary = {
+  totalFiles: 0,
+  queuedFiles: 0,
+  activeProcessing: 0,
+  completedFiles: 0,
+  failedFiles: 0,
+  needsReviewFiles: 0,
+  totalRejections: 0,
+  pendingRejections: 0,
+  totalAnomalies: 0,
+  systemThroughput: 0,
+  averageProcessingTimeMs: 0,
+  worker: {
+    activeJobs: 0,
+    queuedJobs: 0,
+    maxConcurrentJobs: 3,
+    isRunning: false,
+  },
+  fileTypeStats: [],
+  recentFiles: [],
+  processingTimeHistory: [],
+};
 
 const navigation = [
   { label: "Dashboard", icon: LayoutDashboard },
@@ -39,65 +66,144 @@ const navigation = [
   { label: "Settings", icon: Settings },
 ];
 
-const recentFiles = [
-  {
-    name: "Bank-Txns_001.csv",
-    type: "Bank Transactions",
-    size: "12.4 MB",
-    status: "Processing",
-    progress: 60,
-    time: "2.5 min",
-    anomaly: "2",
-  },
-  {
-    name: "Payments_20261010.csv",
-    type: "Payments",
-    size: "8.1 MB",
-    status: "Completed",
-    progress: 100,
-    time: "1.8 min",
-    anomaly: "—",
-  },
-  {
-    name: "Customer_Update.csv",
-    type: "Accounts",
-    size: "5.6 MB",
-    status: "Failed",
-    progress: 0,
-    time: "—",
-    anomaly: "15",
-  },
-  {
-    name: "MarketFeed.csv",
-    type: "Rates",
-    size: "22.3 MB",
-    status: "Queued",
-    progress: 0,
-    time: "4.2 min",
-    anomaly: "—",
-  },
-];
-
 const pageDescriptions: Record<string, string> = {
   Settings: "Configure dashboard preferences and processing rules.",
 };
 
+function formatFileSize(bytes: number): string {
+  if (!bytes || bytes === 0) return "0 B";
+  if (bytes >= 1024 * 1024 * 1024) {
+    return `${(bytes / (1024 * 1024 * 1024)).toFixed(1)} GB`;
+  }
+  if (bytes >= 1024 * 1024) {
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+  if (bytes >= 1024) {
+    return `${(bytes / 1024).toFixed(1)} KB`;
+  }
+  return `${bytes} B`;
+}
+
+function formatFileType(fileType: string): string {
+  const map: Record<string, string> = {
+    PAYMENTS: "Payments",
+    BANK_TRANSACTIONS: "Bank Transactions",
+    ACCOUNTS: "Accounts",
+    RATES: "Rates",
+  };
+  return map[fileType] || fileType || "Unknown";
+}
+
+function formatFileStatus(status: string): string {
+  const map: Record<string, string> = {
+    QUEUED: "Queued",
+    PROCESSING: "Processing",
+    COMPLETED: "Completed",
+    FAILED: "Failed",
+    NEEDS_REVIEW: "Needs Review",
+  };
+  return map[status] || status;
+}
+
+function formatDuration(ms: number | null): string {
+  if (ms == null) return "—";
+  if (ms >= 60000) {
+    return `${(ms / 60000).toFixed(1)} min`;
+  }
+  return `${(ms / 1000).toFixed(1)} sec`;
+}
+
 export default function Dashboard() {
+  const [summary, setSummary] = useState<DashboardSummary>(initialSummary);
+  const [loading, setLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [activePage, setActivePage] = useState("Dashboard");
   const [search, setSearch] = useState("");
   const [fileType, setFileType] = useState("All Types");
   const [status, setStatus] = useState("All Statuses");
+  const [uploadNotice, setUploadNotice] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const filteredFiles = recentFiles.filter((file) => {
+  const loadDashboardData = useCallback(async () => {
+    try {
+      const data = await fetchDashboardSummary();
+      setSummary(data);
+      setFetchError(null);
+    } catch (error) {
+      setFetchError(
+        error instanceof Error
+          ? error.message
+          : "Unable to load dashboard data"
+      );
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadDashboardData();
+
+    // Refresh dashboard statistics every 5 seconds.
+    const intervalId = window.setInterval(loadDashboardData, 5000);
+    return () => window.clearInterval(intervalId);
+  }, [loadDashboardData]);
+
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploading(true);
+      setUploadNotice(null);
+      await uploadFile(file);
+      setUploadNotice(`File "${file.name}" uploaded successfully and queued for processing!`);
+      await loadDashboardData();
+    } catch (error) {
+      setUploadNotice(
+        `Upload failed: ${error instanceof Error ? error.message : "Unknown error"}`
+      );
+    } finally {
+      setIsUploading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const rawRecentFiles = summary.recentFiles || [];
+
+  const displayFiles = rawRecentFiles.map((file) => ({
+    id: file.fileName,
+    name: file.originalName || file.fileName,
+    rawType: file.fileType,
+    type: formatFileType(file.fileType),
+    size: formatFileSize(file.sizeBytes),
+    rawStatus: file.status,
+    status: formatFileStatus(file.status),
+    progress: Math.min(100, Math.round(file.progress || 0)),
+    time:
+      file.status === "COMPLETED"
+        ? formatDuration(file.actualDurationMs)
+        : formatDuration(file.predictedDurationMs),
+    anomaly: file.anomaliesCount > 0 ? String(file.anomaliesCount) : "—",
+    anomaliesCount: file.anomaliesCount,
+  }));
+
+  const filteredFiles = displayFiles.filter((file) => {
     const matchesSearch = file.name
       .toLowerCase()
       .includes(search.trim().toLowerCase());
 
     const matchesType =
-      fileType === "All Types" || file.type === fileType;
+      fileType === "All Types" ||
+      file.type === fileType ||
+      file.rawType === fileType;
 
     const matchesStatus =
-      status === "All Statuses" || file.status === status;
+      status === "All Statuses" ||
+      file.status.toLowerCase() === status.toLowerCase() ||
+      file.rawStatus === status;
 
     return matchesSearch && matchesType && matchesStatus;
   });
@@ -115,22 +221,16 @@ export default function Dashboard() {
     switch (activePage) {
       case "Analytics":
         return <Activity size={30} />;
-
       case "Master Data":
         return <Database size={30} />;
-
       case "Settings":
         return <Settings size={30} />;
-
       case "Rejections":
         return <ShieldAlert size={30} />;
-
       case "Resolution Centre":
         return <WandSparkles size={30} />;
-
       case "File Details":
         return <FileSearch size={30} />;
-
       default:
         return <Files size={30} />;
     }
@@ -177,11 +277,15 @@ export default function Dashboard() {
         </nav>
 
         <div className="sidebar-footer">
-          <span className="online-dot" />
+          <span className={summary.worker?.isRunning ? "online-dot" : "offline-dot"} />
 
           <div>
             <strong>Processing engine</strong>
-            <p>System operational</p>
+            <p>
+              {summary.worker?.isRunning
+                ? `Operational (${summary.worker.activeJobs}/${summary.worker.maxConcurrentJobs} active)`
+                : "Engine idle"}
+            </p>
           </div>
         </div>
       </aside>
@@ -209,13 +313,19 @@ export default function Dashboard() {
                   onChange={(event) => setSearch(event.target.value)}
                 />
                 {search && (
-                  <button type="button" onClick={() => setSearch("")} aria-label="Clear file search">×</button>
+                  <button
+                    type="button"
+                    onClick={() => setSearch("")}
+                    aria-label="Clear file search"
+                  >
+                    ×
+                  </button>
                 )}
               </label>
             )}
             <div className="engine-status">
-              <span className="online-dot" />
-              Engine Running
+              <span className={summary.worker?.isRunning ? "online-dot" : "offline-dot"} />
+              {summary.worker?.isRunning ? "Engine Running" : "Engine Idle"}
             </div>
 
             <button
@@ -224,7 +334,9 @@ export default function Dashboard() {
               aria-label="Notifications"
               onClick={() =>
                 window.alert(
-                  "You are all caught up on notifications."
+                  summary.pendingRejections > 0 || summary.totalAnomalies > 0
+                    ? `Status: ${summary.pendingRejections} pending rejection(s), ${summary.totalAnomalies} anomaly(ies) detected.`
+                    : "You are all caught up on notifications."
                 )
               }
             >
@@ -246,7 +358,9 @@ export default function Dashboard() {
               <button
                 key={`quick-${item.label}`}
                 type="button"
-                className={`capsule-nav-item ${activePage === item.label ? "active" : ""}`}
+                className={`capsule-nav-item ${
+                  activePage === item.label ? "active" : ""
+                }`}
                 aria-current={activePage === item.label ? "page" : undefined}
                 onClick={() => setActivePage(item.label)}
               >
@@ -260,50 +374,80 @@ export default function Dashboard() {
         <section className="page-body">
           {/* File Details */}
           {activePage === "File Details" && (
-            <FileDetails
-              onBack={() => setActivePage("Dashboard")}
-            />
+            <FileDetails onBack={() => setActivePage("Dashboard")} />
           )}
 
           {/* Dedicated File Monitoring page */}
-          {activePage === "File Monitoring" && (
-            <FileMonitoring />
-          )}
+          {activePage === "File Monitoring" && <FileMonitoring />}
 
           {/* Rejections */}
           {activePage === "Rejections" && (
-            <Rejections
-              onBack={() => setActivePage("Dashboard")}
-            />
+            <Rejections onBack={() => setActivePage("Dashboard")} />
           )}
 
           {/* Resolution Centre */}
           {activePage === "Resolution Centre" && (
-            <ResolutionCentre
-              onBack={() => setActivePage("Dashboard")}
-            />
+            <ResolutionCentre onBack={() => setActivePage("Dashboard")} />
           )}
 
           {/* Analytics */}
           {activePage === "Analytics" && (
-            <Analytics
-              onBack={() => setActivePage("Dashboard")}
-            />
+            <Analytics onBack={() => setActivePage("Dashboard")} />
           )}
 
           {/* Master Data */}
           {activePage === "Master Data" && (
-            <MasterData
-              onBack={() => setActivePage("Dashboard")}
-            />
+            <MasterData onBack={() => setActivePage("Dashboard")} />
           )}
 
           {/* Settings */}
           {activePage === "Settings" && (
-            <SettingsPage
-              onBack={() => setActivePage("Dashboard")}
-            />
+            <SettingsPage onBack={() => setActivePage("Dashboard")} />
           )}
+
+          {fetchError && (
+            <div className="error-banner" role="alert">
+              Failed to fetch dashboard data: {fetchError}
+              <button type="button" onClick={loadDashboardData}>
+                Retry
+              </button>
+            </div>
+          )}
+
+          {uploadNotice && (
+            <div
+              style={{
+                padding: "10px 14px",
+                marginBottom: "16px",
+                borderRadius: "6px",
+                background: uploadNotice.includes("failed")
+                  ? "#ffe8eb"
+                  : "#e0f7eb",
+                color: uploadNotice.includes("failed") ? "#d43e50" : "#13855c",
+                fontSize: "12px",
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>{uploadNotice}</span>
+              <button
+                type="button"
+                onClick={() => setUploadNotice(null)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  cursor: "pointer",
+                  color: "inherit",
+                  fontWeight: "bold",
+                }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
+
+          {loading && <p role="status">Loading dashboard statistics...</p>}
 
           {/* Dashboard overview only */}
           {showDashboard && (
@@ -311,10 +455,8 @@ export default function Dashboard() {
               <div className="section-heading">
                 <div>
                   <h2>Operations Overview</h2>
-
                   <p>
-                    Here's the latest snapshot of file processing
-                    activity.
+                    Here's the latest snapshot of file processing activity.
                   </p>
                 </div>
 
@@ -325,10 +467,10 @@ export default function Dashboard() {
               </div>
 
               {/* KPI cards */}
-              <DashboardCards />
+              <DashboardCards summary={summary} />
 
               {/* Charts */}
-              <DashboardCharts />
+              <DashboardCharts summary={summary} />
 
               {/* Recent files table */}
               <section className="panel monitoring-panel">
@@ -336,21 +478,51 @@ export default function Dashboard() {
                   <div>
                     <h2>Recent Files</h2>
                     <p>
-                      Review recent file ingestion and processing
-                      activity.
+                      Review recent file ingestion and processing activity.
                     </p>
                   </div>
 
-                  <button
-                    className="secondary-button"
-                    type="button"
-                    onClick={() =>
-                      setActivePage("File Monitoring")
-                    }
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: "8px",
+                      alignItems: "center",
+                    }}
                   >
-                    <Files size={17} />
-                    View all files
-                  </button>
+                    <input
+                      type="file"
+                      accept=".csv"
+                      ref={fileInputRef}
+                      style={{ display: "none" }}
+                      onChange={handleFileUpload}
+                    />
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      disabled={isUploading}
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Upload size={16} />
+                      {isUploading ? "Uploading..." : "Upload File"}
+                    </button>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={loadDashboardData}
+                      title="Refresh data"
+                    >
+                      <RotateCcw size={15} />
+                      Refresh
+                    </button>
+                    <button
+                      className="secondary-button"
+                      type="button"
+                      onClick={() => setActivePage("File Monitoring")}
+                    >
+                      <Files size={17} />
+                      View all files
+                    </button>
+                  </div>
                 </div>
 
                 {/* Search and filters */}
@@ -358,9 +530,7 @@ export default function Dashboard() {
                   <select
                     aria-label="Filter by file type"
                     value={fileType}
-                    onChange={(event) =>
-                      setFileType(event.target.value)
-                    }
+                    onChange={(event) => setFileType(event.target.value)}
                   >
                     <option value="All Types">All Types</option>
                     <option value="Payments">Payments</option>
@@ -374,17 +544,14 @@ export default function Dashboard() {
                   <select
                     aria-label="Filter by status"
                     value={status}
-                    onChange={(event) =>
-                      setStatus(event.target.value)
-                    }
+                    onChange={(event) => setStatus(event.target.value)}
                   >
-                    <option value="All Statuses">
-                      All Statuses
-                    </option>
+                    <option value="All Statuses">All Statuses</option>
                     <option value="Completed">Completed</option>
                     <option value="Processing">Processing</option>
                     <option value="Failed">Failed</option>
                     <option value="Queued">Queued</option>
+                    <option value="Needs Review">Needs Review</option>
                   </select>
 
                   <button
@@ -398,8 +565,7 @@ export default function Dashboard() {
                 </div>
 
                 <p className="results-count">
-                  Showing {filteredFiles.length} of{" "}
-                  {recentFiles.length} files
+                  Showing {filteredFiles.length} of {displayFiles.length} files
                 </p>
 
                 <div className="table-wrapper">
@@ -411,17 +577,17 @@ export default function Dashboard() {
                         <th>Size</th>
                         <th>Status</th>
                         <th>Progress</th>
-                        <th>Predicted Time</th>
+                        <th>Processing Time</th>
                         <th>Anomalies</th>
                       </tr>
                     </thead>
 
                     <tbody>
                       {filteredFiles.map((file) => (
-                        <tr key={file.name}>
+                        <tr key={file.id}>
                           <td className="file-name">
                             <Files size={17} />
-                            {file.name}
+                            <span>{file.name}</span>
                           </td>
 
                           <td>{file.type}</td>
@@ -429,7 +595,9 @@ export default function Dashboard() {
 
                           <td>
                             <span
-                              className={`status-badge ${file.status.toLowerCase()}`}
+                              className={`status-badge ${file.rawStatus
+                                .toLowerCase()
+                                .replace(/_/g, "-")}`}
                             >
                               {file.status}
                             </span>
@@ -446,7 +614,9 @@ export default function Dashboard() {
                                 aria-valuemax={100}
                               >
                                 <div
-                                  className={`progress-fill ${file.status.toLowerCase()}`}
+                                  className={`progress-fill ${file.rawStatus
+                                    .toLowerCase()
+                                    .replace(/_/g, "-")}`}
                                   style={{
                                     width: `${file.progress}%`,
                                   }}
@@ -462,9 +632,7 @@ export default function Dashboard() {
                           <td>
                             <span
                               className={
-                                file.anomaly === "—"
-                                  ? ""
-                                  : "anomaly-count"
+                                file.anomaly === "—" ? "" : "anomaly-count"
                               }
                             >
                               {file.anomaly}
@@ -475,12 +643,10 @@ export default function Dashboard() {
 
                       {filteredFiles.length === 0 && (
                         <tr>
-                          <td
-                            colSpan={7}
-                            className="empty-state"
-                          >
-                            No files match your search or selected
-                            filters.
+                          <td colSpan={7} className="empty-state">
+                            {displayFiles.length === 0
+                              ? "No files ingested yet. Click 'Upload File' to process banking data."
+                              : "No files match your search or selected filters."}
                           </td>
                         </tr>
                       )}
@@ -497,19 +663,18 @@ export default function Dashboard() {
                   </div>
 
                   <div>
-                    <h3>Recent Anomalies</h3>
+                    <h3>Recent Anomalies ({summary.totalAnomalies})</h3>
 
                     <p>
-                      Review suspicious transactions, invalid IFSC
-                      codes and data quality issues.
+                      {summary.totalAnomalies > 0
+                        ? `${summary.totalAnomalies} anomaly record(s) detected across ingested files.`
+                        : "Review suspicious transactions, invalid IFSC codes and data quality issues."}
                     </p>
 
                     <button
                       className="text-button"
                       type="button"
-                      onClick={() =>
-                        setActivePage("Rejections")
-                      }
+                      onClick={() => setActivePage("Rejections")}
                     >
                       Review anomalies →
                     </button>
@@ -522,19 +687,18 @@ export default function Dashboard() {
                   </div>
 
                   <div>
-                    <h3>Resolution Centre</h3>
+                    <h3>Resolution Centre ({summary.pendingRejections})</h3>
 
                     <p>
-                      Review rejected records and apply suggested
-                      corrections before resubmission.
+                      {summary.pendingRejections > 0
+                        ? `${summary.pendingRejections} rejected record(s) awaiting review and resubmission.`
+                        : "Review rejected records and apply suggested corrections before resubmission."}
                     </p>
 
                     <button
                       className="text-button"
                       type="button"
-                      onClick={() =>
-                        setActivePage("Resolution Centre")
-                      }
+                      onClick={() => setActivePage("Resolution Centre")}
                     >
                       Open resolutions →
                     </button>
@@ -544,7 +708,7 @@ export default function Dashboard() {
             </>
           )}
 
-          {/* Fallback for any unimplemented page */}
+          {/* Fallback for any other page */}
           {!showDashboard &&
             activePage !== "File Monitoring" &&
             activePage !== "File Details" &&
@@ -554,9 +718,7 @@ export default function Dashboard() {
             activePage !== "Master Data" &&
             activePage !== "Settings" && (
               <section className="page-placeholder">
-                <div className="placeholder-icon">
-                  {renderPageIcon()}
-                </div>
+                <div className="placeholder-icon">{renderPageIcon()}</div>
 
                 <h2>{activePage}</h2>
 
@@ -584,7 +746,7 @@ export default function Dashboard() {
           <footer className="page-footer">
             <CircleHelp size={15} />
             Concurrent File Processing &amp; Monitoring
-            <span>Frontend prototype · Mock data</span>
+            <span>Connected to Backend API · Live Database Data</span>
           </footer>
         </section>
       </main>
