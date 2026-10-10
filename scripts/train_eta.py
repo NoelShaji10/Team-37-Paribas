@@ -1,15 +1,16 @@
 """Train the processing-time (ETA) model on how long the REAL pipeline takes.
 
-Tiya's python/file_time_prediction.py builds the model. Its own `collect` step times the file-level
-validator only (milliseconds), while the backend pipeline (validation, normalisation, anomaly
-detection, database inserts) takes seconds. This script keeps her make-data and train steps exactly
-as they are and replaces only the timing source:
+Tiya's python/file_time_prediction.py (PR #8 version) builds the model: per-format linear model or
+gradient boosting on file format, size and concurrency, 70/15/15 split. Her own `collect` step times
+her webapp parser (milliseconds), while the backend pipeline (validation, normalisation, anomaly
+detection, database inserts) takes seconds. This script keeps her `train` step as it is and replaces
+only the timing source:
 
-  1. make-data  (her script)  build N files of varied sizes from the organiser CSVs
+  1. generate                 N files of varied sizes cut from the organiser CSVs
   2. feed                     drop them into backend/incoming in waves, so concurrency varies
   3. wait                     until the backend has processed every one
-  4. export                   actual durations from PostgreSQL -> output/file_timings.csv (her format)
-  5. train      (her script)  70/15/15 split, best model -> output/time_model.joblib
+  4. export                   actual durations from PostgreSQL -> output/processing_timings.csv (her format)
+  5. train      (her script)  best model -> output/processing_time_model.joblib (scikit-learn of this machine)
   6. reload                   the ML service picks up the new model
 
 Run from the repo root with backend + ML service running:
@@ -23,7 +24,6 @@ import re
 import shutil
 import subprocess
 import sys
-import tempfile
 import time
 from pathlib import Path
 
@@ -32,19 +32,18 @@ import requests
 ROOT = Path(__file__).resolve().parent.parent
 HER_SCRIPT = ROOT / "python" / "file_time_prediction.py"
 INCOMING = ROOT / "backend" / "incoming"
-TIMINGS = ROOT / "output" / "file_timings.csv"
+TIMINGS = ROOT / "output" / "processing_timings.csv"
 
 EXPORT_SQL = (
-    "\\copy (SELECT f.\"fileName\" AS file_name, "
-    "CASE f.\"fileType\"::text WHEN 'BANK_TRANSACTIONS' THEN 'bank_txns' WHEN 'PAYMENTS' THEN 'payments' "
-    "WHEN 'ACCOUNTS' THEN 'accounts' ELSE 'rates' END AS file_type, "
-    "f.\"sizeBytes\" AS size_bytes, f.\"processedRows\" AS rows, "
-    "(SELECT COUNT(*) FROM \"ProcessingFile\" o WHERE o.\"startedAt\" <= f.\"startedAt\" "
-    "AND o.\"completedAt\" >= f.\"startedAt\") AS active_workers, "
-    "ROUND(f.\"actualDurationMs\" / 1000.0, 3) AS duration_sec, "
-    "ROUND(EXTRACT(EPOCH FROM (f.\"startedAt\" - f.\"receivedAt\"))::numeric, 3) AS queue_wait_sec, "
-    "'True' AS passed FROM \"ProcessingFile\" f WHERE f.\"actualDurationMs\" IS NOT NULL "
-    "AND f.\"processedRows\" > 0 AND f.status::text IN ('COMPLETED', 'NEEDS_REVIEW')) "
+    r'\copy (SELECT f."fileName" AS file_name, ' + "'CSV' AS file_format, "
+    r'f."sizeBytes" AS size_bytes, f."processedRows" AS rows, '
+    r'(SELECT COUNT(*) FROM "ProcessingFile" o WHERE o."startedAt" <= f."startedAt" '
+    r'AND o."completedAt" >= f."startedAt") AS active_workers, '
+    r'ROUND(f."actualDurationMs" / 1000.0, 3) AS duration_sec, '
+    r'ROUND(EXTRACT(EPOCH FROM (f."startedAt" - f."receivedAt"))::numeric, 3) AS queue_wait_sec, '
+    "'success' AS status, 'pipeline (backend)' AS data_label "
+    r'FROM "ProcessingFile" f WHERE f."actualDurationMs" IS NOT NULL '
+    r'AND f."processedRows" > 0 AND f.status::text IN ' + "('COMPLETED', 'NEEDS_REVIEW')) "
     "TO '{out}' WITH CSV HEADER"
 )
 
@@ -68,15 +67,27 @@ def run(cmd, **kw):
 
 
 def generate(src: Path, n: int, min_rows: int, max_rows: int, seed: int) -> Path:
-    """Her make-data expects names like bank_txns_1_000_000.csv; link the organiser files under those names."""
-    links = Path(tempfile.mkdtemp(prefix="eta_src_"))
-    for f in src.glob("*.csv"):
-        (links / f.name.replace(",", "_")).symlink_to(f.resolve())
+    """Cut n files (split across the 4 types) of log-uniform sizes from the organiser CSVs."""
+    rng = random.Random(seed)
     out = ROOT / "output" / f"eta_files_{seed}"
-    run([sys.executable, HER_SCRIPT, "make-data", "--src", links, "--out", out, "--n", str(n),
-         "--min-rows", str(min_rows), "--max-rows", str(max_rows), "--seed", str(seed)])
-    for f in out.glob("*.csv"):  # make each file unique to this run (the backend rejects duplicates)
-        f.rename(f.with_name(f"{f.stem}_s{seed}.csv"))
+    out.mkdir(parents=True, exist_ok=True)
+    per_type = max(1, n // 4)
+    for t in ("accounts", "bank_txns", "payments", "rates"):
+        sources = sorted(src.glob(f"{t}_1,000,000.csv")) or sorted(src.glob(f"{t}_100,000.csv"))
+        if not sources:
+            print(f"  skip {t}: no source CSV in {src}")
+            continue
+        with open(sources[0], encoding="utf-8", newline="") as f:
+            header, lines = f.readline(), f.readlines()
+        hi, lo = min(max_rows, len(lines)), min(min_rows, len(lines))
+        for i in range(per_type):
+            k = int(round(lo * ((hi / lo) ** rng.random())))
+            start = rng.randint(0, len(lines) - k)
+            with open(out / f"{t}_eta{i:04d}_{k}_s{seed}.csv", "w", encoding="utf-8", newline="") as w:
+                w.write(header)
+                w.writelines(lines[start:start + k])
+        print(f"  {t}: {per_type} files from {sources[0].name} ({lo:,} to {hi:,} rows)")
+        del lines
     return out
 
 
@@ -121,7 +132,7 @@ def main():
     a = ap.parse_args()
 
     if not a.skip_generate:
-        print("1. Generating files (python/file_time_prediction.py make-data)")
+        print("1. Generating files from the organiser CSVs")
         folder = generate(Path(a.src), a.n, a.min_rows, a.max_rows, a.seed)
         print("2. Feeding them to the pipeline through backend/incoming")
         feed(folder, a.backend)
@@ -134,8 +145,8 @@ def main():
     rows = sum(1 for _ in open(TIMINGS)) - 1
     print(f"  {rows} timing records in {TIMINGS}")
 
-    print("5. Training (python/file_time_prediction.py train)")
-    run([sys.executable, HER_SCRIPT, "train"])
+    print("5. Training (python/file_time_prediction.py train, PR #8 version)")
+    run([sys.executable, HER_SCRIPT, "train", "--min-rows", "30"])
 
     print("6. Reloading the model in the ML service")
     print("  ", requests.post(f"{a.ml}/prediction/reload", timeout=30).json())
