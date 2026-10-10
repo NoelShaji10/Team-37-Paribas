@@ -8,7 +8,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 PY="ml-service/.venv/bin/python"
 DB_URL=$(grep -E '^DATABASE_URL=' backend/.env | cut -d= -f2- | tr -d '"' | tr -d "'")
-DB_URL="${DB_URL%%\?*}"   # psql does not accept Prisma's ?schema= option
+DB_URL=$(echo "$DB_URL" | sed -E 's/[?&]schema=[^&]*//')   # psql rejects Prisma's schema= option; keep sslmode
 pause() { echo; read -r -p "Press Enter for: $1 " _; echo; }
 sql() { psql "$DB_URL" -P pager=off -c "$1"; }
 

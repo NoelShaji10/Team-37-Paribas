@@ -45,6 +45,13 @@ export function startFileWatcher(): void {
           fileName
         );
 
+      if (result.status === 'QUARANTINED') {
+        logger.warn(
+          `[FileWatcher] ${fileName} not queued: ${result.quarantineReason}`
+        );
+        return;
+      }
+
       const jobId =
         `folder_${Date.now()}`;
 

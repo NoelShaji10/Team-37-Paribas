@@ -15,30 +15,39 @@ import {
   Line,
 } from "recharts";
 
-const statusData = [
-  { name: "Completed", value: 118, color: "#18a878" },
-  { name: "Failed", value: 10, color: "#e65362" },
-  { name: "Processing", value: 6, color: "#3978e8" },
-  { name: "Queued", value: 4, color: "#e6a23c" },
-];
+import type { ProcessingFile } from "../types";
+import { STATUS_LABEL, TYPE_LABEL } from "../types";
 
-const fileTypeData = [
-  { type: "Payments", files: 42 },
-  { type: "Bank-Txns", files: 35 },
-  { type: "Accounts", files: 28 },
-  { type: "Rates", files: 23 },
-];
+const STATUS_COLOR: Record<string, string> = {
+  Completed: "#18a878", "Needs Review": "#e6a23c", Failed: "#e65362", Processing: "#3978e8", Queued: "#9aa6b8",
+};
 
-const processingTimeData = [
-  { time: "09:00", actual: 2.8, predicted: 3.0 },
-  { time: "10:00", actual: 3.2, predicted: 3.1 },
-  { time: "11:00", actual: 2.5, predicted: 2.7 },
-  { time: "12:00", actual: 3.6, predicted: 3.4 },
-  { time: "13:00", actual: 2.9, predicted: 3.0 },
-  { time: "14:00", actual: 2.4, predicted: 2.6 },
-];
+function buildChartData(files: ProcessingFile[]) {
+  const byStatus = new Map<string, number>();
+  const byType = new Map<string, number>();
+  for (const f of files) {
+    const s = STATUS_LABEL[f.status];
+    byStatus.set(s, (byStatus.get(s) ?? 0) + 1);
+    const t = TYPE_LABEL[f.fileType];
+    byType.set(t, (byType.get(t) ?? 0) + 1);
+  }
+  const statusData = [...byStatus.entries()].map(([name, value]) => ({ name, value, color: STATUS_COLOR[name] ?? "#9aa6b8" }));
+  const fileTypeData = [...byType.entries()].map(([type, count]) => ({ type, files: count }));
+  // Actual vs predicted seconds for the latest finished files (oldest first)
+  const processingTimeData = files
+    .filter((f) => f.actualDurationMs !== null)
+    .slice(0, 12)
+    .reverse()
+    .map((f) => ({
+      time: (f.originalName ?? f.fileName).slice(0, 12),
+      actual: Number(((f.actualDurationMs ?? 0) / 1000).toFixed(1)),
+      predicted: f.predictedDurationMs !== null ? Number((f.predictedDurationMs / 1000).toFixed(1)) : null,
+    }));
+  return { statusData, fileTypeData, processingTimeData };
+}
 
-export default function DashboardCharts() {
+export default function DashboardCharts({ files }: { files: ProcessingFile[] }) {
+  const { statusData, fileTypeData, processingTimeData } = buildChartData(files);
   return (
     <section className="charts-grid">
       <article className="panel chart-panel">
@@ -121,7 +130,7 @@ export default function DashboardCharts() {
       <article className="panel chart-panel time-chart-panel">
         <div className="chart-heading">
           <h3>Actual vs Predicted Processing Time</h3>
-          <p>Hourly average processing time in minutes</p>
+          <p>Seconds per file, latest finished files</p>
         </div>
 
         <div className="chart-container">
@@ -142,7 +151,7 @@ export default function DashboardCharts() {
                 tick={{ fontSize: 10 }}
                 axisLine={false}
                 tickLine={false}
-                unit="m"
+                unit="s"
               />
               <Tooltip />
               <Legend />

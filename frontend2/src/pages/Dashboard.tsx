@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import {
   Activity,
@@ -14,6 +14,7 @@ import {
   Search,
   Settings,
   ShieldAlert,
+  Upload,
   WandSparkles,
 } from "lucide-react";
 
@@ -28,6 +29,10 @@ import Analytics from "./Analytics";
 import MasterData from "./MasterData";
 import SettingsPage from "./SettingsPage";
 
+import { useRealtimeFiles } from "../hooks/useRealtimeFiles";
+import { api } from "../services/api";
+import { STATUS_LABEL, TYPE_LABEL, formatBytes, formatMs, statusClass } from "../types";
+
 const navigation = [
   { label: "Dashboard", icon: LayoutDashboard },
   { label: "File Monitoring", icon: Files },
@@ -39,45 +44,6 @@ const navigation = [
   { label: "Settings", icon: Settings },
 ];
 
-const recentFiles = [
-  {
-    name: "Bank-Txns_001.csv",
-    type: "Bank Transactions",
-    size: "12.4 MB",
-    status: "Processing",
-    progress: 60,
-    time: "2.5 min",
-    anomaly: "2",
-  },
-  {
-    name: "Payments_20261010.csv",
-    type: "Payments",
-    size: "8.1 MB",
-    status: "Completed",
-    progress: 100,
-    time: "1.8 min",
-    anomaly: "—",
-  },
-  {
-    name: "Customer_Update.csv",
-    type: "Accounts",
-    size: "5.6 MB",
-    status: "Failed",
-    progress: 0,
-    time: "—",
-    anomaly: "15",
-  },
-  {
-    name: "MarketFeed.csv",
-    type: "Rates",
-    size: "22.3 MB",
-    status: "Queued",
-    progress: 0,
-    time: "4.2 min",
-    anomaly: "—",
-  },
-];
-
 const pageDescriptions: Record<string, string> = {
   Settings: "Configure dashboard preferences and processing rules.",
 };
@@ -87,6 +53,64 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [fileType, setFileType] = useState("All Types");
   const [status, setStatus] = useState("All Statuses");
+  const [selectedFileId, setSelectedFileId] = useState<string | null>(null);
+  const [uploadMessage, setUploadMessage] = useState<string | null>(null);
+  const [modelInfo, setModelInfo] = useState<string | null>(null);
+  const uploadInput = useRef<HTMLInputElement>(null);
+
+  // Live data from the backend (refreshes every 2 s while files are processing)
+  const { files, summary, error, refresh } = useRealtimeFiles();
+
+  // Which models the ML service has loaded (Layer 2 anomaly + processing-time prediction)
+  useEffect(() => {
+    Promise.allSettled([api.modelStatus(), api.predictionStatus()]).then(([anomaly, eta]) => {
+      const parts: string[] = [];
+      if (anomaly.status === "fulfilled") {
+        const trained = Object.entries(anomaly.value).filter(([, m]) => m && m.rows > 1);
+        parts.push(
+          `Layer 2 models: ${trained.map(([t, m]) => `${t} (${m!.rows.toLocaleString()} rows)`).join(", ")}`
+        );
+      }
+      if (eta.status === "fulfilled") {
+        parts.push(
+          eta.value.method === "model"
+            ? `ETA model: trained on ${eta.value.trained_on ?? "?"} files`
+            : "ETA: heuristic (train with scripts/train_eta.py)"
+        );
+      }
+      setModelInfo(parts.length ? parts.join(" · ") : "ML service not reachable on port 8000");
+    });
+  }, []);
+
+  const recentFiles = files.map((f) => ({
+    id: f.id,
+    name: f.originalName ?? f.fileName,
+    type: TYPE_LABEL[f.fileType],
+    size: formatBytes(f.sizeBytes),
+    status: STATUS_LABEL[f.status],
+    statusCls: statusClass(f.status),
+    progress: Math.round(f.progress),
+    time: formatMs(f.predictedDurationMs),
+    anomaly: f._count?.anomalies ? f._count.anomalies.toLocaleString() : "—",
+  }));
+
+  const handleUpload = async (list: FileList | null) => {
+    if (!list || list.length === 0) return;
+    setUploadMessage(`Uploading ${list.length} file(s)…`);
+    const results = await Promise.allSettled([...list].map((file) => api.upload(file)));
+    const ok = results.filter((r) => r.status === "fulfilled").length;
+    const failed = results
+      .map((r, i) => (r.status === "rejected" ? `${list[i].name}: ${(r.reason as Error).message}` : null))
+      .filter(Boolean);
+    setUploadMessage(`${ok} queued${failed.length ? `; ${failed.join("; ")}` : ""}`);
+    if (uploadInput.current) uploadInput.current.value = "";
+    refresh();
+  };
+
+  const openFile = (id: string) => {
+    setSelectedFileId(id);
+    setActivePage("File Details");
+  };
 
   const filteredFiles = recentFiles.filter((file) => {
     const matchesSearch = file.name
@@ -261,13 +285,14 @@ export default function Dashboard() {
           {/* File Details */}
           {activePage === "File Details" && (
             <FileDetails
+              fileId={selectedFileId}
               onBack={() => setActivePage("Dashboard")}
             />
           )}
 
           {/* Dedicated File Monitoring page */}
           {activePage === "File Monitoring" && (
-            <FileMonitoring />
+            <FileMonitoring onOpenFile={openFile} />
           )}
 
           {/* Rejections */}
@@ -325,10 +350,18 @@ export default function Dashboard() {
               </div>
 
               {/* KPI cards */}
-              <DashboardCards />
+              {error && (
+                <div className="live-banner error">
+                  Backend not reachable ({error}). Is it running on port 5000?
+                </div>
+              )}
+              {!error && modelInfo && <div className="live-banner ok">{modelInfo}</div>}
+              {uploadMessage && <div className="live-banner ok">{uploadMessage}</div>}
+
+              <DashboardCards summary={summary} />
 
               {/* Charts */}
-              <DashboardCharts />
+              <DashboardCharts files={files} />
 
               {/* Recent files table */}
               <section className="panel monitoring-panel">
@@ -341,6 +374,22 @@ export default function Dashboard() {
                     </p>
                   </div>
 
+                  <input
+                    ref={uploadInput}
+                    className="upload-input"
+                    type="file"
+                    accept=".csv"
+                    multiple
+                    onChange={(event) => handleUpload(event.target.files)}
+                  />
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    onClick={() => uploadInput.current?.click()}
+                  >
+                    <Upload size={17} />
+                    Upload files
+                  </button>
                   <button
                     className="secondary-button"
                     type="button"
@@ -385,6 +434,7 @@ export default function Dashboard() {
                     <option value="Processing">Processing</option>
                     <option value="Failed">Failed</option>
                     <option value="Queued">Queued</option>
+                    <option value="Needs Review">Needs Review</option>
                   </select>
 
                   <button
@@ -418,7 +468,12 @@ export default function Dashboard() {
 
                     <tbody>
                       {filteredFiles.map((file) => (
-                        <tr key={file.name}>
+                        <tr
+                          key={file.id}
+                          className="clickable"
+                          onClick={() => openFile(file.id)}
+                          title="Open file details"
+                        >
                           <td className="file-name">
                             <Files size={17} />
                             {file.name}
@@ -429,7 +484,7 @@ export default function Dashboard() {
 
                           <td>
                             <span
-                              className={`status-badge ${file.status.toLowerCase()}`}
+                              className={`status-badge ${file.statusCls}`}
                             >
                               {file.status}
                             </span>
@@ -446,7 +501,7 @@ export default function Dashboard() {
                                 aria-valuemax={100}
                               >
                                 <div
-                                  className={`progress-fill ${file.status.toLowerCase()}`}
+                                  className={`progress-fill ${file.statusCls}`}
                                   style={{
                                     width: `${file.progress}%`,
                                   }}

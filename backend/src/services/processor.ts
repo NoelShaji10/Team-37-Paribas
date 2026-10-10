@@ -612,16 +612,74 @@ export class ProcessorService {
     }
 
     // ------------------------------------------------
+    // Referential check (workbook TXN-2 / PAY-2): a transaction or payment
+    // must reference an account that exists in the Account table. The shared
+    // schema enforces this with a foreign key; checking here first means a
+    // missing account rejects only that row (with a reason), instead of the
+    // database refusing the whole batch.
+    // ------------------------------------------------
+
+    let loadable = validRecords;
+    if (
+      (fileType === 'BANK_TRANSACTIONS' || fileType === 'PAYMENTS') &&
+      validRecords.length > 0
+    ) {
+      const accountOf = (r: Record<string, unknown>) =>
+        String(r.account_number ?? '').trim();
+      const wanted = [...new Set(validRecords.map(accountOf).filter(Boolean))];
+      const existing = new Set(
+        (
+          await prisma.account.findMany({
+            where: { accountNumber: { in: wanted } },
+            select: { accountNumber: true },
+          })
+        ).map((a: { accountNumber: string }) => a.accountNumber)
+      );
+      const rule = fileType === 'PAYMENTS' ? 'PAY-2' : 'TXN-2';
+      const orphanLogs: Prisma.FaultLogCreateManyInput[] = [];
+      loadable = [];
+      validRecords.forEach((record, i) => {
+        const account = accountOf(record);
+        if (existing.has(account)) {
+          loadable.push(record);
+          return;
+        }
+        orphanLogs.push({
+          fileId,
+          rowNumber: validRowNumbers[i],
+          columnName: 'account_number',
+          cellValue: account || null,
+          errorMessage: `Account ${account} not found in Accounts master (rule ${rule})`,
+          errorType: 'ACCOUNT_NOT_FOUND',
+          rawRowData: record as Prisma.InputJsonValue,
+          status: 'PENDING',
+          aiSuggestion: null,
+          aiConfidence: null,
+          aiExplanation:
+            'No safe automatic fix: load the Accounts file that contains this account first, or confirm the account number with the source system',
+        });
+      });
+      if (orphanLogs.length > 0) {
+        await prisma.faultLog.createMany({ data: orphanLogs });
+        stats.validRows -= orphanLogs.length;
+        stats.rejectedRows += orphanLogs.length;
+        logger.info(
+          `[ProcessorService] ${orphanLogs.length} rows rejected: account not in Accounts (${rule}) | file=${fileId}`
+        );
+      }
+    }
+
+    // ------------------------------------------------
     // Save valid records
     // ------------------------------------------------
 
     if (
-      validRecords.length >
+      loadable.length >
       0
     ) {
       await loaderService.loadValidRecords(
         fileId,
-        validRecords
+        loadable
       );
     }
   }

@@ -44,6 +44,15 @@ export const uploadFile = async (
         file.originalname
       );
 
+    if (ingestionResult.status === 'QUARANTINED') {
+      res.status(422).json({
+        success: false,
+        message: ingestionResult.quarantineReason,
+        data: { fileId: ingestionResult.fileId, status: 'FAILED' },
+      });
+      return;
+    }
+
     const jobId = `job_${Date.now()}_${Math.random()
       .toString(36)
       .substring(2, 8)}`;

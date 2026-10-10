@@ -8,6 +8,16 @@ export interface AnomalyResult {
 
 export interface PredictionResult {
   estimatedSeconds: number;
+  method?: string; // "model" (trained) or "heuristic"
+}
+
+/** File-level validation (python/file_level_validation.py) result. */
+export interface FileValidationResult {
+  passed: boolean;
+  errorCode: string | null;
+  reason: string | null;
+  fileType: string | null;
+  totalRows: number;
 }
 
 /** One Layer 2 anomaly flag, exactly as the ML service returns it. */
@@ -230,19 +240,43 @@ export class MLClient {
   }
 
   /**
+   * File-level checks before ingestion (extension, name, header, encoding,
+   * record length, trailer). Returns null if the ML service is unavailable.
+   */
+  async validateFile(
+    path: string,
+    fileName: string
+  ): Promise<FileValidationResult | null> {
+    try {
+      return await this.post<FileValidationResult>(
+        '/files/validate',
+        { path, fileName },
+        this.batchTimeoutMs
+      );
+    } catch (error) {
+      logger.warn(`[MLClient] File validation unavailable for ${fileName}; skipping`, error);
+      return null;
+    }
+  }
+
+  /**
    * Predict how long a file will take to process.
    */
   async predictProcessingTime(
-    fileSizeMb: number,
-    rowCount: number
+    fileType: string,
+    rowCount: number,
+    sizeBytes: number,
+    concurrency = 1
   ): Promise<number> {
     try {
       const response =
         await this.post<PredictionResult>(
           '/prediction/predict-time',
           {
-            fileSizeMb,
+            fileType,
             rowCount,
+            sizeBytes,
+            concurrency,
           }
         );
 

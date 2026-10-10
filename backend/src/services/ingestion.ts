@@ -10,10 +10,13 @@ import {
   classifierService,
   FileCategory,
 } from './classifier';
+import { mlClient } from './mlClient';
+import { fileWorker } from '../workers/fileWorker';
 
 export interface IngestionResult {
   fileId: string;
-  status: 'QUEUED';
+  status: 'QUEUED' | 'QUARANTINED';
+  quarantineReason?: string;
   originalName: string;
   filePath: string;
   fileSizeBytes: number;
@@ -108,6 +111,51 @@ export class IngestionService {
     // Keep same ID through DB → worker → processor → sockets
     const fileId = crypto.randomUUID();
 
+    // 7b. File-level validation (python/file_level_validation.py via the ML service):
+    // file name, header, encoding, record length, trailer. A failed file is
+    // quarantined with its reason and recorded as FAILED, so it shows on the dashboard.
+    const fileCheck = await mlClient.validateFile(filePath, originalName);
+    if (fileCheck && !fileCheck.passed) {
+      const reason = `Quarantined [${fileCheck.errorCode}]: ${fileCheck.reason}`;
+      const quarantineDir = path.join(__dirname, '../../quarantine');
+      await fs.promises.mkdir(quarantineDir, { recursive: true });
+      const quarantinedPath = path.join(quarantineDir, `${fileId}_${path.basename(originalName)}`);
+      await fs.promises.rename(filePath, quarantinedPath).catch(async () => {
+        await fs.promises.copyFile(filePath, quarantinedPath);
+        await fs.promises.unlink(filePath);
+      });
+      await prisma.processingFile.create({
+        data: {
+          id: fileId,
+          fileName: originalName,
+          originalName,
+          storedPath: quarantinedPath,
+          fileType,
+          status: 'FAILED',
+          sizeBytes: BigInt(stats.size),
+          checksum: fileHash,
+          progress: 0,
+          processedRows: 0,
+          successfulRows: 0,
+          failedRows: 0,
+          totalRows: 0,
+          errorMessage: reason,
+          completedAt: new Date(),
+        },
+      });
+      logger.warn(`[IngestionService] ${originalName} ${reason}`);
+      return {
+        fileId,
+        status: 'QUARANTINED',
+        quarantineReason: reason,
+        originalName,
+        filePath: quarantinedPath,
+        fileSizeBytes: stats.size,
+        fileHash,
+        fileType,
+      };
+    }
+
     // 8. Create persistent ProcessingFile record
     const processingFile =
       await prisma.processingFile.create({
@@ -138,6 +186,24 @@ export class IngestionService {
         `size=${stats.size} bytes`
     );
 
+    // 9. Predicted processing time, before the file starts (spec: ETA for queued files).
+    // Uses the trained time model in the ML service, or its heuristic if none is trained.
+    try {
+      const rows = fileCheck?.totalRows || (await this.countDataRows(filePath));
+      const worker = fileWorker.getStats();
+      const concurrency = Math.min(
+        worker.activeJobs + worker.queuedJobs + 1,
+        worker.maxConcurrentJobs
+      );
+      const seconds = await mlClient.predictProcessingTime(fileType, rows, stats.size, concurrency);
+      await prisma.processingFile.update({
+        where: { id: fileId },
+        data: { totalRows: rows, predictedDurationMs: Math.round(seconds * 1000) },
+      });
+    } catch (error) {
+      logger.warn(`[IngestionService] Could not predict processing time for ${originalName}`, error);
+    }
+
     return {
       fileId: processingFile.id,
       status: 'QUEUED',
@@ -147,6 +213,20 @@ export class IngestionService {
       fileHash,
       fileType,
     };
+  }
+
+  /**
+   * Counts data rows (lines minus the header) without loading the file.
+   */
+  private async countDataRows(filePath: string): Promise<number> {
+    let lines = 0;
+    let last = 10;
+    for await (const chunk of fs.createReadStream(filePath) as AsyncIterable<Buffer>) {
+      for (const byte of chunk) if (byte === 10) lines++;
+      last = chunk[chunk.length - 1];
+    }
+    if (last !== 10) lines++;
+    return Math.max(lines - 1, 0);
   }
 
   /**

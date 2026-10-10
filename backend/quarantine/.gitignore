@@ -1,0 +1,3 @@
+# Files that failed file-level validation. Not source.
+*
+!.gitignore

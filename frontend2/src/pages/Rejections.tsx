@@ -1,95 +1,74 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
+  AlertTriangle,
+  CheckCircle2,
+  CircleX,
+  Download,
   Search,
   ShieldAlert,
-  AlertTriangle,
-  CircleX,
-  CheckCircle2,
 } from "lucide-react";
+
+import { api } from "../services/api";
+import type { PendingRejection } from "../types";
 
 interface RejectionsProps {
   onBack: () => void;
 }
 
-const rejectionData = [
-  {
-    id: "REC-10021",
-    file: "Customer_Update.csv",
-    field: "IFSC Code",
-    value: "ABCD00012",
-    reason: "Invalid IFSC code format",
-    severity: "High",
-    status: "Pending",
-  },
-  {
-    id: "REC-10022",
-    file: "Customer_Update.csv",
-    field: "Account Number",
-    value: "12345",
-    reason: "Account number length is invalid",
-    severity: "High",
-    status: "Pending",
-  },
-  {
-    id: "REC-10023",
-    file: "Bank-Txns_001.csv",
-    field: "Transaction Amount",
-    value: "-5000",
-    reason: "Transaction amount cannot be negative",
-    severity: "Medium",
-    status: "Pending",
-  },
-  {
-    id: "REC-10024",
-    file: "MarketFeed.csv",
-    field: "Currency",
-    value: "XYZ",
-    reason: "Currency code not found in reference data",
-    severity: "Low",
-    status: "Reviewed",
-  },
-  {
-    id: "REC-10025",
-    file: "Payments_20261010.csv",
-    field: "Beneficiary Name",
-    value: "",
-    reason: "Required beneficiary name is missing",
-    severity: "High",
-    status: "Pending",
-  },
-];
+const PAGE = 100;
 
-function Rejections({ onBack }: RejectionsProps) {
+export default function Rejections({ onBack }: RejectionsProps) {
+  const [records, setRecords] = useState<PendingRejection[]>([]);
+  const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [severity, setSeverity] = useState("All Severities");
-  const [status, setStatus] = useState("All Statuses");
+  const [errorType, setErrorType] = useState("All Error Types");
+  const [limit, setLimit] = useState(PAGE);
 
-  const filteredRecords = rejectionData.filter((record) => {
-    const query = search.trim().toLowerCase();
+  useEffect(() => {
+    api
+      .pendingRejections()
+      .then(setRecords)
+      .catch((e) => setError(e instanceof Error ? e.message : "Could not load rejections"));
+  }, []);
 
-    const matchesSearch =
-      record.id.toLowerCase().includes(query) ||
-      record.file.toLowerCase().includes(query) ||
-      record.field.toLowerCase().includes(query) ||
-      record.reason.toLowerCase().includes(query);
+  const errorTypes = useMemo(
+    () => [...new Set(records.map((r) => r.errorType ?? "OTHER"))].sort(),
+    [records]
+  );
 
-    const matchesSeverity =
-      severity === "All Severities" || record.severity === severity;
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return records.filter((r) => {
+      const text = `${r.file?.originalName ?? ""} ${r.columnName ?? ""} ${r.cellValue ?? ""} ${r.errorMessage}`.toLowerCase();
+      return (!q || text.includes(q)) && (errorType === "All Error Types" || (r.errorType ?? "OTHER") === errorType);
+    });
+  }, [records, search, errorType]);
 
-    const matchesStatus =
-      status === "All Statuses" || record.status === status;
+  const filesAffected = new Set(records.map((r) => r.fileId)).size;
+  const withSuggestion = records.filter((r) => r.aiSuggestion).length;
+  const topType = useMemo(() => {
+    const c = new Map<string, number>();
+    for (const r of records) c.set(r.errorType ?? "OTHER", (c.get(r.errorType ?? "OTHER") ?? 0) + 1);
+    return [...c.entries()].sort((a, b) => b[1] - a[1])[0];
+  }, [records]);
 
-    return matchesSearch && matchesSeverity && matchesStatus;
-  });
-
-  const pendingCount = rejectionData.filter(
-    (record) => record.status === "Pending"
-  ).length;
-
-  const highSeverityCount = rejectionData.filter(
-    (record) => record.severity === "High"
-  ).length;
+  const exportCsv = () => {
+    const rows = [
+      ["File", "Row", "Field", "Value", "Error type", "Reason", "AI suggestion", "AI confidence"],
+      ...filtered.map((r) => [
+        r.file?.originalName ?? r.fileId, r.rowNumber, r.columnName ?? "", r.cellValue ?? "", r.errorType ?? "",
+        r.errorMessage, r.aiSuggestion ?? "", r.aiConfidence ?? "",
+      ]),
+    ];
+    const csv = rows.map((row) => row.map((v) => `"${String(v).replaceAll('"', '""')}"`).join(",")).join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "rejected-records.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="rejections-page">
@@ -98,52 +77,28 @@ function Rejections({ onBack }: RejectionsProps) {
           <ArrowLeft size={16} />
           Back to Dashboard
         </button>
-
         <h1>Rejected Records</h1>
-        <p>Review validation failures and identify records requiring correction.</p>
+        <p>Rows that failed validation, with the reason and the AI-suggested fix where one is safe.</p>
       </div>
+
+      {error && <div className="live-banner error">{error}</div>}
 
       <div className="rejection-summary">
         <article className="rejection-stat">
-          <div className="rejection-stat-icon red">
-            <CircleX size={21} />
-          </div>
-          <div>
-            <span>Total rejected records</span>
-            <strong>{rejectionData.length}</strong>
-          </div>
+          <div className="rejection-stat-icon red"><CircleX size={21} /></div>
+          <div><span>Pending rejections</span><strong>{records.length.toLocaleString()}</strong></div>
         </article>
-
         <article className="rejection-stat">
-          <div className="rejection-stat-icon orange">
-            <AlertTriangle size={21} />
-          </div>
-          <div>
-            <span>High severity</span>
-            <strong>{highSeverityCount}</strong>
-          </div>
+          <div className="rejection-stat-icon orange"><AlertTriangle size={21} /></div>
+          <div><span>Top error type</span><strong>{topType ? `${topType[0]} (${topType[1].toLocaleString()})` : "—"}</strong></div>
         </article>
-
         <article className="rejection-stat">
-          <div className="rejection-stat-icon blue">
-            <ShieldAlert size={21} />
-          </div>
-          <div>
-            <span>Pending review</span>
-            <strong>{pendingCount}</strong>
-          </div>
+          <div className="rejection-stat-icon blue"><ShieldAlert size={21} /></div>
+          <div><span>Files affected</span><strong>{filesAffected}</strong></div>
         </article>
-
         <article className="rejection-stat">
-          <div className="rejection-stat-icon green">
-            <CheckCircle2 size={21} />
-          </div>
-          <div>
-            <span>Reviewed</span>
-            <strong>
-              {rejectionData.length - pendingCount}
-            </strong>
-          </div>
+          <div className="rejection-stat-icon green"><CheckCircle2 size={21} /></div>
+          <div><span>With AI suggestion</span><strong>{withSuggestion.toLocaleString()}</strong></div>
         </article>
       </div>
 
@@ -151,108 +106,56 @@ function Rejections({ onBack }: RejectionsProps) {
         <div className="panel-heading">
           <div>
             <h2>Validation Failures</h2>
-            <p>Search rejected records by file, field, ID or reason.</p>
+            <p>Search by file, field, value or reason. Resolve them in the Resolution Centre.</p>
           </div>
+          <button className="secondary-button" type="button" onClick={exportCsv}>
+            <Download size={16} />
+            Export CSV
+          </button>
         </div>
 
         <div className="file-filters">
           <label className="search-box">
             <Search size={17} />
-            <input
-              type="search"
-              placeholder="Search rejected records..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              aria-label="Search rejected records"
-            />
+            <input type="search" placeholder="Search rejected records..." value={search}
+              onChange={(event) => setSearch(event.target.value)} aria-label="Search rejected records" />
           </label>
-
-          <select
-            aria-label="Filter by severity"
-            value={severity}
-            onChange={(event) => setSeverity(event.target.value)}
-          >
-            <option>All Severities</option>
-            <option>High</option>
-            <option>Medium</option>
-            <option>Low</option>
-          </select>
-
-          <select
-            aria-label="Filter by review status"
-            value={status}
-            onChange={(event) => setStatus(event.target.value)}
-          >
-            <option>All Statuses</option>
-            <option>Pending</option>
-            <option>Reviewed</option>
+          <select aria-label="Filter by error type" value={errorType} onChange={(event) => setErrorType(event.target.value)}>
+            <option>All Error Types</option>
+            {errorTypes.map((t) => <option key={t}>{t}</option>)}
           </select>
         </div>
 
-        <p className="results-count">
-          Showing {filteredRecords.length} of {rejectionData.length} records
-        </p>
+        <p className="results-count">Showing {Math.min(limit, filtered.length).toLocaleString()} of {filtered.length.toLocaleString()} records</p>
 
         <div className="table-wrapper">
           <table className="file-table rejection-table">
             <thead>
               <tr>
-                <th>Record ID</th>
-                <th>Source File</th>
-                <th>Field</th>
-                <th>Rejected Value</th>
-                <th>Reason</th>
-                <th>Severity</th>
-                <th>Status</th>
+                <th>Source File</th><th>Row</th><th>Field</th><th>Rejected Value</th><th>Reason</th><th>AI Suggestion</th>
               </tr>
             </thead>
-
             <tbody>
-              {filteredRecords.map((record) => (
-                <tr key={record.id}>
-                  <td className="rejection-id">{record.id}</td>
-                  <td>{record.file}</td>
-                  <td>{record.field}</td>
-                  <td>{record.value || "Empty"}</td>
-                  <td>{record.reason}</td>
-                  <td>
-                    <span
-                      className={`severity-badge ${record.severity.toLowerCase()}`}
-                    >
-                      {record.severity}
-                    </span>
-                  </td>
-                  <td>
-                    <span
-                      className={`review-status ${record.status.toLowerCase()}`}
-                    >
-                      {record.status}
-                    </span>
-                  </td>
+              {filtered.slice(0, limit).map((r) => (
+                <tr key={r.id}>
+                  <td>{r.file?.originalName ?? r.fileId}</td>
+                  <td className="rejection-id">{r.rowNumber}</td>
+                  <td>{r.columnName}</td>
+                  <td>{r.cellValue || "Empty"}</td>
+                  <td>{r.errorMessage}</td>
+                  <td>{r.aiSuggestion ? `${r.aiSuggestion} (${Math.round((r.aiConfidence ?? 0) * 100)}%)` : "—"}</td>
                 </tr>
               ))}
-
-              {filteredRecords.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="empty-state">
-                    No rejected records match your filters.
-                  </td>
-                </tr>
+              {filtered.length === 0 && (
+                <tr><td colSpan={6} className="empty-state">No rejected records match these filters.</td></tr>
               )}
             </tbody>
           </table>
         </div>
+        {filtered.length > limit && (
+          <button className="secondary-button" type="button" onClick={() => setLimit(limit + PAGE)}>Show more</button>
+        )}
       </section>
-
-      <div className="rejection-note">
-        <AlertTriangle size={18} />
-        <p>
-          These are illustrative records for the frontend prototype.
-          Actual rejection details will come from the backend validation engine.
-        </p>
-      </div>
     </div>
   );
 }
-
-export default Rejections;

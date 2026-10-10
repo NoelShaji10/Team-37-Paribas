@@ -136,6 +136,8 @@ model Account {
 
   file ProcessingFile? @relation(fields: [fileId], references: [id], onDelete: SetNull)
 
+  bankTransactions BankTransaction[]
+  payments         Payment[]
 
   @@index([fileId])
   @@index([currency])
@@ -159,6 +161,7 @@ model BankTransaction {
   updatedAt DateTime @updatedAt
 
   file    ProcessingFile? @relation(fields: [fileId], references: [id], onDelete: SetNull)
+  account Account         @relation(fields: [accountNumber], references: [accountNumber], onDelete: Cascade)
 
   @@index([fileId])
   @@index([accountNumber])
@@ -182,6 +185,7 @@ model Payment {
   updatedAt DateTime @updatedAt
 
   file    ProcessingFile? @relation(fields: [fileId], references: [id], onDelete: SetNull)
+  account Account         @relation(fields: [accountNumber], references: [accountNumber], onDelete: Cascade)
 
   @@index([fileId])
   @@index([accountNumber])

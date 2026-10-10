@@ -19,7 +19,18 @@ pg_isready -q || { echo "  PostgreSQL is not running. Start it: brew services st
 [ -x "$ROOT/ml-service/.venv/bin/uvicorn" ] || { echo "  Missing ml-service/.venv. Run the one-time setup first."; exit 1; }
 [ -f "$ROOT/backend/.env" ] || { echo "  Missing backend/.env. Copy backend/.env.example and edit it."; exit 1; }
 [ -d "$ROOT/backend/node_modules" ] || { echo "  Run npm install in backend/ first."; exit 1; }
-[ -d "$ROOT/frontend/node_modules" ] || { echo "  Run npm install in frontend/ first."; exit 1; }
+[ -d "$ROOT/frontend2/node_modules" ] || { echo "  Run npm install in frontend2/ first."; exit 1; }
+DB_URL=$(grep -E '^DATABASE_URL=' "$ROOT/backend/.env" | cut -d= -f2- | tr -d '"' | tr -d "'")
+DB_HOST=$(echo "$DB_URL" | sed -E 's#^[a-z]+://([^@/]*@)?([^:/?]*).*#\2#')
+case "$DB_HOST" in
+  localhost|127.0.0.1|::1|"") echo "  Database: local ($DB_HOST)" ;;
+  *) if [ "${ALLOW_SHARED_DB:-}" != "1" ]; then
+       echo "  backend/.env points to '$DB_HOST', a shared database. Processing files would WRITE to it."
+       echo "  Use a local copy (./scripts/copy_shared_schema.sh), or run with ALLOW_SHARED_DB=1 if the team agreed."
+       exit 1
+     fi
+     echo "  Database: SHARED ($DB_HOST), allowed by ALLOW_SHARED_DB=1" ;;
+esac
 for port in 8000 5000 5173; do
   if lsof -ti tcp:$port > /dev/null 2>&1; then echo "  Port $port is busy. Run ./scripts/stop_all.sh first."; exit 1; fi
 done
@@ -28,7 +39,7 @@ echo "  OK"
 echo "Starting"
 (cd "$ROOT/ml-service" && .venv/bin/uvicorn app.main:app --port 8000 > "$LOGS/ml.log" 2>&1 &)
 (cd "$ROOT/backend" && npm run dev > "$LOGS/backend.log" 2>&1 &)
-(cd "$ROOT/frontend" && npm run dev -- --port 5173 > "$LOGS/frontend.log" 2>&1 &)
+(cd "$ROOT/frontend2" && npm run dev -- --port 5173 > "$LOGS/frontend.log" 2>&1 &)
 
 wait_for "ml-service" "http://localhost:8000/health" ml || exit 1
 wait_for "backend   " "http://localhost:5000/health" backend || exit 1
