@@ -4,6 +4,8 @@ import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import http from 'http';
+import { Prisma } from '@prisma/client';
+
 
 import fileRoutes from './routes/files';
 import { initSocket } from './sockets/socket';
@@ -53,6 +55,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/api/files', fileRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/resolutions', resolutionRoutes);
+
 
 // 404
 app.use((_req: Request, res: Response) => {

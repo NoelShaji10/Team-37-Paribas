@@ -103,7 +103,7 @@ export const getDashboardSummary = async (
     // Approximate processing throughput
     // ------------------------------------------------
 
-    const successfulRows =
+    const successfulRows = 
       processingStats._sum.successfulRows ?? 0;
 
     const totalDurationMs =
