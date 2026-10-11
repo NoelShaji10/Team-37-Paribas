@@ -47,7 +47,7 @@ export class LoaderService {
       );
     }
 
-    logger.info(
+    logger.debug(
       `[LoaderService] Loading ${records.length} records | ` +
         `file=${fileId} | type=${file.fileType}`
     );
@@ -155,7 +155,7 @@ export class LoaderService {
         skipDuplicates: true,
       });
 
-    logger.info(
+    logger.debug(
       `[LoaderService] Inserted ${result.count} accounts | file=${fileId}`
     );
 
@@ -235,7 +235,7 @@ export class LoaderService {
         skipDuplicates: true,
       });
 
-    logger.info(
+    logger.debug(
       `[LoaderService] Inserted ${result.count} transactions | file=${fileId}`
     );
 
@@ -316,7 +316,7 @@ export class LoaderService {
         skipDuplicates: true,
       });
 
-    logger.info(
+    logger.debug(
       `[LoaderService] Inserted ${result.count} payments | file=${fileId}`
     );
 
@@ -422,7 +422,7 @@ export class LoaderService {
         skipDuplicates: true,
       });
 
-    logger.info(
+    logger.debug(
       `[LoaderService] Inserted ${result.count} exchange rates | file=${fileId}`
     );
 

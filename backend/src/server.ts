@@ -1,133 +1,92 @@
-import { Router, Request, Response } from 'express';
+import { startFileWatcher } from './watchers/fileWatcher';
+import dashboardRoutes from './routes/dashboard';
+import resolutionRoutes from './routes/resolutions';
+import settingsRoutes from './routes/settings';
+import accountMasterRoutes from './routes/accountMaster';
+import express, { NextFunction, Request, Response } from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import http from 'http';
 
-import { prisma } from '../db/prisma';
-import { logger } from '../utils/logger';
+import fileRoutes from './routes/files';
+import { initSocket } from './sockets/socket';
+import { logger } from './utils/logger';
+import { fileWorker } from './workers/fileWorker';
 
-/**
- * Account Master lookup for the Python validation layer (rule_validation.py).
- *
- *   POST /api/account-master/lookup
- *   Body:     { "account_numbers": ["1234567890", ...] }
- *   Response: { "accounts": [{ "account_number": "...", "account_status": "active" }],
- *               "meta": { requested, unique, found, missing } }
- *
- * Source table: "Account" (Prisma model Account)
- *   account_number -> "accountNumber" (primary key)
- *   account_status -> "accountStatus"
- *
- * Only matching accounts are returned; anything not returned is missing
- * from the Account Master. The query is parameterized by Prisma and only
- * selects the two required columns.
- */
 
-const router = Router();
 
-/** Max account numbers per request (after trimming, before de-duplication). */
-const MAX_BATCH = Number(process.env.ACCOUNT_LOOKUP_MAX_BATCH ?? 5000);
+dotenv.config();
 
-/**
- * Optional shared key. When ACCOUNT_MASTER_API_KEY is set in backend/.env,
- * callers must send header  X-API-Key: <value>.  Unset = no auth (local dev).
- */
-const API_KEY = process.env.ACCOUNT_MASTER_API_KEY?.trim() || null;
+const app = express();
+const server = http.createServer(app);
 
-function sendError(
-  res: Response,
-  status: number,
-  code: string,
-  message: string
-): void {
-  res.status(status).json({ error: { code, message } });
-}
+const PORT = Number(process.env.PORT) || 5000;
+const CLIENT_ORIGIN =
+  process.env.CLIENT_ORIGIN || 'http://localhost:5173';
 
-router.post('/lookup', async (req: Request, res: Response) => {
-  /* ---------- auth ---------- */
-  if (API_KEY && req.get('x-api-key') !== API_KEY) {
-    sendError(res, 401, 'UNAUTHORIZED', 'Missing or invalid X-API-Key header');
-    return;
-  }
+// Middleware
+app.use(
+  cors({
+    origin: [
+      CLIENT_ORIGIN,
+      'http://localhost:5173',
+      'http://127.0.0.1:5173',
+    ],
+    credentials: true,
+  })
+);
 
-  /* ---------- validate body ---------- */
-  const raw = req.body?.account_numbers;
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
-  if (!Array.isArray(raw)) {
-    sendError(
-      res,
-      400,
-      'INVALID_BODY',
-      'Body must be JSON: { "account_numbers": ["1234567890", ...] }'
-    );
-    return;
-  }
+// Socket.IO
+initSocket(server);
 
-  if (raw.length > MAX_BATCH) {
-    sendError(
-      res,
-      413,
-      'BATCH_TOO_LARGE',
-      `At most ${MAX_BATCH} account numbers per request (got ${raw.length}). Split into smaller batches.`
-    );
-    return;
-  }
+// Start file worker pool
+fileWorker.start();
+startFileWatcher();
 
-  const invalid = raw.findIndex(
-    (v: unknown) => typeof v !== 'string' && typeof v !== 'number'
-  );
-  if (invalid !== -1) {
-    sendError(
-      res,
-      400,
-      'INVALID_ACCOUNT_NUMBER',
-      `account_numbers[${invalid}] must be a string (got ${raw[invalid] === null ? 'null' : typeof raw[invalid]})`
-    );
-    return;
-  }
-
-  /* ---------- normalize + de-duplicate ---------- */
-  // Trim, drop empties, de-duplicate. Match both as-given and upper-case,
-  // because rule_validation.py upper-cases account numbers.
-  const unique = [...new Set(raw.map((v: string | number) => String(v).trim()).filter(Boolean))];
-  const candidates = [...new Set(unique.flatMap((v) => [v, v.toUpperCase()]))];
-
-  if (unique.length === 0) {
-    res.json({ accounts: [], meta: { requested: raw.length, unique: 0, found: 0, missing: 0 } });
-    return;
-  }
-
-  /* ---------- query (parameterized, 2 columns only) ---------- */
-  try {
-    const rows = await prisma.account.findMany({
-      where: { accountNumber: { in: candidates } },
-      select: { accountNumber: true, accountStatus: true },
-    });
-
-    const accounts = rows.map((r: { accountNumber: string; accountStatus: string }) => ({
-      account_number: r.accountNumber,
-      account_status: String(r.accountStatus ?? '').trim().toLowerCase(),
-    }));
-
-    const foundUpper = new Set(accounts.map((a: { account_number: string }) => a.account_number.toUpperCase()));
-    const missing = unique.filter((v) => !foundUpper.has(v.toUpperCase())).length;
-
-    logger.debug(
-      `[AccountMaster] lookup | requested=${raw.length} | unique=${unique.length} | ` +
-        `found=${accounts.length} | missing=${missing}`
-    );
-
-    res.json({
-      accounts,
-      meta: {
-        requested: raw.length,
-        unique: unique.length,
-        found: accounts.length,
-        missing,
-      },
-    });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
-    logger.error(`[AccountMaster] lookup failed: ${message}`, error);
-    sendError(res, 503, 'DATABASE_UNAVAILABLE', 'Account Master lookup failed. Retry later.');
-  }
+// Health check
+app.get('/health', (_req: Request, res: Response) => {
+  res.status(200).json({
+    success: true,
+    message: 'Backend is running',
+    timestamp: new Date().toISOString(),
+  });
 });
 
-export default router;
+// API routes
+app.use('/api/files', fileRoutes);
+app.use('/api/dashboard', dashboardRoutes);
+app.use('/api/resolutions', resolutionRoutes);
+app.use('/api/settings', settingsRoutes);
+app.use('/api/account-master', accountMasterRoutes);
+
+// 404
+app.use((_req: Request, res: Response) => {
+  res.status(404).json({
+    success: false,
+    message: 'Route not found',
+  });
+});
+
+// Global error handler
+app.use(
+  (
+    error: Error,
+    _req: Request,
+    res: Response,
+    _next: NextFunction
+  ) => {
+    logger.error('[Server] Unhandled error:', error);
+
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+    });
+  }
+);
+
+server.listen(PORT, () => {
+  logger.info(`[Server] Backend running on http://localhost:${PORT}`);
+});

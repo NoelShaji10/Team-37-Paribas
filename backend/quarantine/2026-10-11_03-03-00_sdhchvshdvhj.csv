@@ -1,0 +1,4 @@
+account_number,account_holder_name,account_type,balance,currency,account_status,ifsc_code
+ACC130001,Rohan Gupta,CURRENT,54000.50,INR,ACTIVE,YESB0001357
+ACC130002,Ananya Rao,SAVINGS,29500.25,INR,ACTIVE,BARB0002468
+ACC130003,Vikram Joshi,SAVINGS,41000.00,INR,ACTIVE,CNRB0003579

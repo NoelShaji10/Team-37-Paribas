@@ -263,7 +263,7 @@ export class MLClient {
       );
     }
 
-    logger.info(
+    logger.debug(
       `[MLClient] POST ${endpoint} | ` +
         `file=${fileId} | ` +
         `type=${fileType} | ` +
@@ -283,7 +283,7 @@ export class MLClient {
           }
         );
 
-      logger.info(
+      logger.debug(
         `[MLClient] Batch anomaly success | ` +
           `file=${fileId} | ` +
           `count=${response.count}`

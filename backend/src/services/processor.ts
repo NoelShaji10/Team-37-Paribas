@@ -64,6 +64,8 @@ interface ProcessingStats {
   validRows: number;
   rejectedRows: number;
   anomalyCount: number;
+  /** Data rows in the file (counted up front), used for an accurate progress %. */
+  totalRows: number;
   /** Set once any ML call fails in 'review' mode; later ML calls are skipped. */
   mlError: string | null;
 }
@@ -84,6 +86,12 @@ interface SuggestionItem {
 export class ProcessorService {
   private readonly batchSize = 500;
 
+  /** Last 10% step logged per file, so large files print ~10 progress lines. */
+  private readonly loggedStep = new Map<string, number>();
+
+  /** Files for which the suggestion service already failed (warn once, then skip). */
+  private readonly suggestionsDown = new Set<string>();
+
   /* =======================================================
      MAIN FILE PROCESSOR
      ======================================================= */
@@ -101,6 +109,7 @@ export class ProcessorService {
       validRows: 0,
       rejectedRows: 0,
       anomalyCount: 0,
+      totalRows: 0,
       mlError: null,
     };
 
@@ -129,6 +138,7 @@ export class ProcessorService {
       const fileType = fileRecord.fileType;
       const fileSizeBytes = (await fs.promises.stat(filePath)).size;
       const dataRows = await this.countDataRows(filePath);
+      stats.totalRows = dataRows;
 
       logger.info(
         `[ProcessorService] File metadata | file=${fileId} | type=${fileType} | ` +
@@ -504,7 +514,7 @@ export class ProcessorService {
 
     const faultLogs: Prisma.FaultLogCreateManyInput[] = [];
 
-    logger.info(
+    logger.debug(
       `[ProcessorService] Processing batch | file=${fileId} | type=${fileType} | ` +
         `batchRows=${records.length}`
     );
@@ -567,7 +577,7 @@ export class ProcessorService {
       );
     }
 
-    logger.info(
+    logger.debug(
       `[ProcessorService] Batch validated | file=${fileId} | ` +
         `valid=${validRecords.length} | invalid=${records.length - validRecords.length}`
     );
@@ -581,13 +591,13 @@ export class ProcessorService {
 
       await prisma.faultLog.createMany({ data: faultLogs });
 
-      logger.info(
+      logger.debug(
         `[ProcessorService] Saved ${faultLogs.length} validation faults | file=${fileId}`
       );
     }
 
     if (validRecords.length === 0) {
-      logger.info(
+      logger.debug(
         `[ProcessorService] No valid rows for Layer 2 | file=${fileId}`
       );
       return;
@@ -609,7 +619,7 @@ export class ProcessorService {
     );
 
     if (anomalyResult) {
-      logger.info(
+      logger.debug(
         `[ProcessorService] ML batch response | file=${fileId} | ` +
           `rows=${validRowNumbers[0]}-${validRowNumbers[validRowNumbers.length - 1]} | ` +
           `flags=${anomalyResult.flags.length}`
@@ -708,7 +718,7 @@ export class ProcessorService {
   ): Promise<void> {
     try {
       await loaderService.loadValidRecords(fileId, validRecords);
-      logger.info(
+      logger.debug(
         `[ProcessorService] Batch load complete | file=${fileId} | rows=${validRecords.length}`
       );
       return;
@@ -814,6 +824,8 @@ export class ProcessorService {
     fileType: FileType,
     faultLogs: Prisma.FaultLogCreateManyInput[]
   ): Promise<void> {
+    if (this.suggestionsDown.has(fileId)) return;
+
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), ML_SUGGEST_TIMEOUT_MS);
 
@@ -855,13 +867,14 @@ export class ProcessorService {
         if (s.suggestion != null) attached++;
       });
 
-      logger.info(
+      logger.debug(
         `[ProcessorService] AI suggestions | file=${fileId} | ` +
           `faults=${faultLogs.length} | withFix=${attached}`
       );
     } catch (error) {
+      this.suggestionsDown.add(fileId);
       logger.warn(
-        `[ProcessorService] AI suggestions unavailable | file=${fileId} | ` +
+        `[ProcessorService] AI suggestions unavailable for the rest of this file | file=${fileId} | ` +
           `${error instanceof Error ? error.message : String(error)}`
       );
     } finally {
@@ -969,7 +982,7 @@ export class ProcessorService {
 
     stats.anomalyCount += flags.length;
 
-    logger.info(
+    logger.debug(
       `[ProcessorService] Saved ML anomalies | file=${fileId} | ` +
         `count=${flags.length} | total=${stats.anomalyCount}`
     );
@@ -986,10 +999,15 @@ export class ProcessorService {
     stats: ProcessingStats
   ): Promise<void> {
     // 100% is reserved for the final status update.
-    const progress =
-      totalBytes > 0
-        ? Math.min(Math.floor((bytesRead / totalBytes) * 100), 99)
-        : 0;
+    // Rows processed / rows in file (bytes read from disk run ahead of the rows
+    // actually processed, so they are only a fallback). 100% is set at the end.
+    const fraction =
+      stats.totalRows > 0
+        ? stats.processedRows / stats.totalRows
+        : totalBytes > 0
+          ? bytesRead / totalBytes
+          : 0;
+    const progress = Math.min(Math.floor(fraction * 100), 99);
 
     await prisma.processingFile.update({
       where: { id: fileId },
@@ -1007,6 +1025,17 @@ export class ProcessorService {
       rejectedRows: stats.rejectedRows,
       anomalyCount: stats.anomalyCount,
     });
+
+    // One INFO line per 10% (per-batch detail is at LOG_LEVEL=debug).
+    const step = Math.floor(progress / 10);
+    if (step > (this.loggedStep.get(fileId) ?? 0)) {
+      this.loggedStep.set(fileId, step);
+      logger.info(
+        `[ProcessorService] Progress ${step * 10}% | file=${fileId} | ` +
+          `rows=${stats.processedRows} | valid=${stats.validRows} | ` +
+          `rejected=${stats.rejectedRows} | anomalies=${stats.anomalyCount}`
+      );
+    }
   }
 
   /* =======================================================
@@ -1023,6 +1052,9 @@ export class ProcessorService {
     filePath: string,
     stage: ArchiveStage
   ): Promise<void> {
+    this.loggedStep.delete(fileId);
+    this.suggestionsDown.delete(fileId);
+
     const newPath = await archiveFile(filePath, stage);
     if (!newPath || newPath === filePath) return;
 
