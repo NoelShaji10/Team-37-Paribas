@@ -3282,3 +3282,45 @@ body {
 .upload-input {
   display: none;
 }
+
+/* ---- API Docs page ---- */
+.api-docs-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+}
+.api-docs-tabs a.secondary-button {
+  text-decoration: none;
+}
+.api-status-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #9aa6b8;
+}
+.api-status-dot.up {
+  background: #18a878;
+}
+.api-status-dot.down {
+  background: #e65362;
+}
+.api-docs-about {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  color: #6d7a90;
+  font-size: 13px;
+  margin: 0 0 10px;
+}
+.api-docs-frame {
+  width: 100%;
+  height: calc(100vh - 260px);
+  min-height: 560px;
+  border: 1px solid #dfe5ee;
+  border-radius: 10px;
+  background: #fff;
+}
