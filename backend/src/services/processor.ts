@@ -601,12 +601,37 @@ export class ProcessorService {
     // Layer 2 anomaly detection: every valid row, one call per batch
     // ------------------------------------------------
 
+    // Accounts referenced by this batch, read from the Account table (read only).
+    // Used by Layer 2 (T-N11 overdraft, T-N12 night transfer from a retail account)
+    // and by the TXN-2 / PAY-2 referential check below.
+    const accountOf = (r: Record<string, unknown>) =>
+      String(r.account_number ?? '').trim();
+    const knownAccounts = new Map<string, { account_type: string; balance: string; currency: string }>();
+    if (
+      (fileType === 'BANK_TRANSACTIONS' || fileType === 'PAYMENTS') &&
+      validRecords.length > 0
+    ) {
+      const wanted = [...new Set(validRecords.map(accountOf).filter(Boolean))];
+      const rows = await prisma.account.findMany({
+        where: { accountNumber: { in: wanted } },
+        select: { accountNumber: true, accountType: true, balance: true, currency: true },
+      });
+      for (const a of rows as Array<{ accountNumber: string; accountType: string; balance: unknown; currency: string }>) {
+        knownAccounts.set(a.accountNumber, {
+          account_type: a.accountType,
+          balance: String(a.balance),
+          currency: a.currency,
+        });
+      }
+    }
+
     if (fileType && validRecords.length > 0) {
       const flags = await mlClient.detectAnomalyBatch(
         fileId,
         fileType,
         validRecords,
-        validRowNumbers
+        validRowNumbers,
+        Object.fromEntries(knownAccounts)
       );
       await this.recordAnomalies(fileId, flags, stats);
     }
@@ -624,17 +649,7 @@ export class ProcessorService {
       (fileType === 'BANK_TRANSACTIONS' || fileType === 'PAYMENTS') &&
       validRecords.length > 0
     ) {
-      const accountOf = (r: Record<string, unknown>) =>
-        String(r.account_number ?? '').trim();
-      const wanted = [...new Set(validRecords.map(accountOf).filter(Boolean))];
-      const existing = new Set(
-        (
-          await prisma.account.findMany({
-            where: { accountNumber: { in: wanted } },
-            select: { accountNumber: true },
-          })
-        ).map((a: { accountNumber: string }) => a.accountNumber)
-      );
+      const existing = new Set(knownAccounts.keys()); // looked up once, above
       const rule = fileType === 'PAYMENTS' ? 'PAY-2' : 'TXN-2';
       const orphanLogs: Prisma.FaultLogCreateManyInput[] = [];
       loadable = [];

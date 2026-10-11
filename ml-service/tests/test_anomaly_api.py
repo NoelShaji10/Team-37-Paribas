@@ -82,3 +82,29 @@ def test_committed_models_match_the_code():
         row = {c: "" for c in engine.COLUMNS[ft]}
         cols = list(engine.make_features(engine.prepare(pd.DataFrame([row]), ft), ft).columns)
         assert cols == ref["feature_cols"], f"{ft}: model features differ from code features"
+
+
+def test_night_transfer_from_retail_account_with_account_lookup():
+    rows = make_txns(300, seed=3)
+    night = dict(rows[0], transaction_id="NIGHT1", account_number="5550001111", transaction_date="2025-09-12 03:10:00",
+                 transaction_type="debit", amount="350000.00", currency="INR", description="RTGS payment")
+    day = dict(night, transaction_id="DAY1", transaction_date="2025-09-12 14:10:00")
+    biz = dict(night, transaction_id="BIZ1", account_number="5550002222")
+    accounts = {"5550001111": {"account_type": "savings", "balance": "900000", "currency": "INR"},
+                "5550002222": {"account_type": "business", "balance": "900000", "currency": "INR"}}
+    r = client.post("/anomaly/detect-batch", json={"fileId": "t1", "fileType": "BANK_TXNS",
+                                                    "rows": rows + [night, day, biz], "accounts": accounts}).json()
+    hits = [f for f in r["flags"] if f["anomaly_type"] == "NIGHT_TRANSFER_RETAIL"]
+    assert [f["row_number"] for f in hits] == [301]  # only the 3 AM retail transfer; not daytime, not business
+    client.post("/anomaly/finish", json={"fileId": "t1"})
+
+
+def test_overdraft_needs_account_balance():
+    rows = make_txns(250, seed=4)
+    od = dict(rows[0], transaction_id="OD1", account_number="5550003333", transaction_type="debit",
+              amount="50000.00", currency="INR")
+    accounts = {"5550003333": {"account_type": "savings", "balance": "1000.00", "currency": "INR"}}
+    r = client.post("/anomaly/detect-batch", json={"fileId": "t2", "fileType": "BANK_TXNS",
+                                                    "rows": rows + [od], "accounts": accounts}).json()
+    assert any(f["anomaly_type"] == "OVERDRAFT" and f["row_number"] == 251 for f in r["flags"])
+    client.post("/anomaly/finish", json={"fileId": "t2"})

@@ -50,8 +50,11 @@ CONFIG = {
     "iforest_min_rows": 200,
     "max_shap_rows": 2000,            # SHAP only on flagged rows, capped for speed
     # T-N11 overdraft, T-N12 unusual time, T-N13 rapid successive, T-N14 threshold
-    "night_start_hour": 0,            # T-N12 window [start, end) for non-business accounts
+    "night_start_hour": 0,            # T-N12 / temporal: night window [start, end)
     "night_end_hour": 5,
+    "retail_account_types": ["savings", "checking"],   # retail; in Indian banking "current" accounts are business accounts
+    "transfer_channels": ["rtgs payment", "fund transfer", "imps transfer", "upi transfer"],  # outgoing, from description
+    "night_transfer_min_amount": 200000.0,   # large transfer (RTGS minimum in India is 2 lakh)
     "rare_hour_share": 0.01,          # T-N12 without account types: hour seen in < 1% of reference rows
     "velocity_count": 3,              # T-N13: this many txns per account ...
     "velocity_window": "10min",       # ... within this window
@@ -125,11 +128,11 @@ COVERAGE = [
     ("T-N1..T-N8, T-N10", "Duplicates, orphan account, future date, bad enums, amount <= 0, bad currency, IFSC", "Layer 1", "T-1..T-7, T-9 validation rules"),
     ("T-N9", "Net credit-debit vs account balance", "Layer 1 (stretch)", "Needs balance as of each date; not in the data"),
     ("T-N11", "Debit amount exceeds account balance", "Layer 2", "OVERDRAFT (needs accounts lookup)"),
-    ("T-N12", "Unusual time for non-business account", "Layer 2", "UNUSUAL_TIME (night window if account type known, else rare-hour profile)"),
+    ("T-N12", "Unusual time for non-business account", "Layer 2", "NIGHT_TRANSFER_RETAIL when the account type is known (from the Account table), else UNUSUAL_TIME rare-hour profile"),
     ("T-N13", "Rapid successive transactions", "Layer 2", "TXN_VELOCITY (file-wide)"),
     ("T-N14", "Round amounts just below reporting threshold", "Layer 2", "NEAR_REPORTING_THRESHOLD + ROUND_AMOUNT"),
     ("AI: statistical outlier", "Amount far above normal for its group", "Layer 2", "HIGH_VALUE_TXN + Isolation Forest"),
-    ("AI: temporal anomaly", "Transaction at unusual hour", "Layer 2", "UNUSUAL_TIME + hour features in Isolation Forest"),
+    ("AI: temporal anomaly", "Wire transfer at 3 AM for retail account", "Layer 2", "NIGHT_TRANSFER_RETAIL: night, retail account, outgoing transfer channel, debit, large amount; plus hour features in Isolation Forest"),
     # Payments
     ("P-N1..P-N9", "Duplicates, orphan account, future date, bad enums, amount <= 0, currency, IFSC for bank transfer", "Layer 1", "P-1..P-8 validation rules"),
     ("P-N10", "Completed payment with no matching Bank-Txn", "Layer 1 (cross-file)", "P-9 cross-file rule"),
@@ -146,7 +149,7 @@ COVERAGE = [
     ("R-N12", "Spread beyond 2 standard deviations", "Layer 2", "WIDE_SPREAD"),
     # AI table rows
     ("AI: pattern deviation", "Autoencoder on account transaction sequences", "N/A", "About 2 rows per account; no sequences to learn"),
-    ("AI: network anomaly", "Circular transfers A to B to C to A", "N/A", "No counterparty column"),
+    ("AI: network anomaly", "Circular transfers A to B to C to A", "N/A", "Needs the receiving account of each transfer; neither Bank-Txns nor Payments has a counterparty column, so cycles cannot be traced without inventing data"),
     ("AI: behavioral drift", "Sudden change in account behaviour", "Layer 2", "Covered by BALANCE_SPIKE and PAYMENT_ABOVE_ACCOUNT_AVG"),
     # File level (spec sections V.3, V.4, VII.6)
     ("File: volume", "Record count or size far from normal", "Layer 2", "FILE_SIZE_UNUSUAL, RECORD_COUNT_UNUSUAL"),
@@ -437,26 +440,37 @@ def _check_overdraft(d, accounts: dict | None):
     flags = []
     for i in d.index[acc.notna() & d["transaction_type"].eq("debit").fillna(False)]:
         a = acc[i]
-        if a.get("currency") == d.at[i, "currency"] and pd.notna(a.get("balance")) and d.at[i, "amount"] > a["balance"]:
+        balance = pd.to_numeric(a.get("balance"), errors="coerce")  # the backend sends Decimal as text
+        same_ccy = str(a.get("currency") or "").strip().upper() == d.at[i, "currency"]
+        if same_ccy and pd.notna(balance) and d.at[i, "amount"] > balance:
             flags.append(_flag(d.at[i, "row_number"], "OVERDRAFT", "T-N11", 0.8, "RULE",
-                               f"Debit {d.at[i, 'amount']:,.2f} exceeds account balance {a['balance']:,.2f}"))
+                               f"Debit {d.at[i, 'amount']:,.2f} exceeds account balance {balance:,.2f}"))
     return flags
 
 
 def _check_unusual_time(d, ref, accounts, cfg):
-    """T-N12. With account types: night window for non-business accounts (the workbook example).
-    Without them: hours that are rare in the reference profile."""
+    """T-N12 and the workbook's temporal anomaly ("wire transfer at 3 AM for retail account").
+
+    With account types (from the Account table): flag a NIGHT_TRANSFER_RETAIL when all hold:
+    night window, retail (non-business) account, debit, outgoing transfer channel in the
+    description (RTGS / fund / IMPS / UPI transfer), and a large amount. Each condition is
+    exact, so the rule is fully explainable; requiring all of them keeps the flag rate low.
+    Without account types: hours that are rare in the reference profile (UNUSUAL_TIME)."""
     hour = d["transaction_date"].dt.hour
     flags = []
     if accounts:
-        acc_type = d["account_number"].map({k: v.get("account_type") for k, v in accounts.items()})
+        acc_type = d["account_number"].map({k: _norm_lower(v.get("account_type")) for k, v in accounts.items()})
+        desc = d["description"].astype("string").str.strip().str.lower() if "description" in d else \
+            pd.Series(pd.NA, index=d.index, dtype="string")
         night = (hour >= cfg["night_start_hour"]) & (hour < cfg["night_end_hour"])
-        hit = night & acc_type.notna() & (acc_type != "business")
+        hit = (night & acc_type.isin(cfg["retail_account_types"]) & d["transaction_type"].eq("debit")
+               & desc.isin(cfg["transfer_channels"]) & (d["amount"] >= cfg["night_transfer_min_amount"]))
         for i in d.index[hit.fillna(False)]:
-            flags.append(_flag(d.at[i, "row_number"], "UNUSUAL_TIME", "T-N12", 0.6, "RULE",
-                               f"{d.at[i, 'transaction_type']} at {d.at[i, 'transaction_date']:%H:%M} on a "
-                               f"{acc_type[i]} account (night window {cfg['night_start_hour']:02d}:00 to "
-                               f"{cfg['night_end_hour']:02d}:00)"))
+            flags.append(_flag(d.at[i, "row_number"], "NIGHT_TRANSFER_RETAIL", "T-N12 / AI: temporal anomaly", 0.8,
+                               "RULE", f"{d.at[i, 'description']} of {d.at[i, 'amount']:,.2f} at "
+                               f"{d.at[i, 'transaction_date']:%H:%M} from a {acc_type[i]} (retail) account "
+                               f"(night window {cfg['night_start_hour']:02d}:00 to {cfg['night_end_hour']:02d}:00, "
+                               f"large transfer at least {cfg['night_transfer_min_amount']:,.0f})"))
         return flags
     share = (ref or {}).get("hour_share")
     if not share:
@@ -466,6 +480,10 @@ def _check_unusual_time(d, ref, accounts, cfg):
         flags.append(_flag(d.at[i, "row_number"], "UNUSUAL_TIME", "T-N12", 0.6, "RULE",
                            f"Hour {int(hour[i]):02d}:00 appears in only {s[i]:.1%} of reference transactions"))
     return flags
+
+
+def _norm_lower(v):
+    return None if v is None else str(v).strip().lower()
 
 
 def _check_stale_pending(d, today, cfg):

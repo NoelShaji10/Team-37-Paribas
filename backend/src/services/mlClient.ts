@@ -125,13 +125,14 @@ export class MLClient {
     fileId: string,
     fileType: string,
     rows: Array<Record<string, unknown>>,
-    rowNumbers: number[]
+    rowNumbers: number[],
+    accounts: Record<string, { account_type: string; balance: string; currency: string }> = {}
   ): Promise<AnomalyFlag[]> {
     if (rows.length === 0) return [];
     try {
       const response = await this.post<FlagsResponse>(
         '/anomaly/detect-batch',
-        { fileId, fileType, rows, rowNumbers },
+        { fileId, fileType, rows, rowNumbers, accounts },
         this.batchTimeoutMs
       );
       return response.flags;

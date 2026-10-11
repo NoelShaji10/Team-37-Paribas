@@ -36,6 +36,7 @@ class BatchRequest(BaseModel):
     fileType: str
     rows: List[Dict[str, Any]]
     rowNumbers: Optional[List[int]] = None  # real file row numbers of the rows sent
+    accounts: Optional[Dict[str, Dict[str, Any]]] = None  # {account_number: {account_type, balance, currency}}
 
 
 class FinishRequest(BaseModel):
@@ -67,7 +68,7 @@ def detect_anomaly(req: AnomalyRequest):
 def detect_batch(req: BatchRequest):
     """Row-level Layer 2 checks for one batch of valid rows."""
     try:
-        flags = anomaly_detector.detect_batch(req.fileId, req.fileType, req.rows, req.rowNumbers)
+        flags = anomaly_detector.detect_batch(req.fileId, req.fileType, req.rows, req.rowNumbers, req.accounts)
     except ValueError as e:
         raise HTTPException(status_code=422, detail=str(e))
     return FlagsResponse(fileId=req.fileId, count=len(flags), flags=flags)
