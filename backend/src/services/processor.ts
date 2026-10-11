@@ -556,8 +556,9 @@ export class ProcessorService {
        this, one unknown account fails the whole batch.
        ----------------------------------------------------- */
 
+    let knownAccounts: Record<string, { account_type: string; balance: string; currency: string }> = {};
     if (ACCOUNT_LINKED_TYPES.has(fileType) && validRecords.length > 0) {
-      await this.rejectUnknownAccounts(
+      knownAccounts = await this.rejectUnknownAccounts(
         fileId,
         validRecords,
         validRowNumbers,
@@ -602,7 +603,8 @@ export class ProcessorService {
         fileId,
         fileType,
         validRecords,
-        validRowNumbers
+        validRowNumbers,
+        knownAccounts
       )
     );
 
@@ -633,20 +635,23 @@ export class ProcessorService {
     validRowNumbers: number[],
     faultLogs: Prisma.FaultLogCreateManyInput[],
     stats: ProcessingStats
-  ): Promise<void> {
+  ): Promise<Record<string, { account_type: string; balance: string; currency: string }>> {
     const accountOf = (r: Record<string, unknown>) =>
       String(r.account_number ?? '').trim();
 
     const wanted = [...new Set(validRecords.map(accountOf).filter(Boolean))];
 
-    const existing = new Set(
-      (
-        await prisma.account.findMany({
-          where: { accountNumber: { in: wanted } },
-          select: { accountNumber: true },
-        })
-      ).map((a) => a.accountNumber)
-    );
+    // One read of the Account table: existence for this check, plus type, balance and
+    // currency for Layer 2 (T-N11 overdraft, T-N12 night transfer from a retail account)
+    const found = (await prisma.account.findMany({
+      where: { accountNumber: { in: wanted } },
+      select: { accountNumber: true, accountType: true, balance: true, currency: true },
+    })) as Array<{ accountNumber: string; accountType: string; balance: unknown; currency: string }>;
+    const existing = new Set(found.map((a) => a.accountNumber));
+    const known: Record<string, { account_type: string; balance: string; currency: string }> = {};
+    for (const a of found) {
+      known[a.accountNumber] = { account_type: a.accountType, balance: String(a.balance), currency: a.currency };
+    }
 
     let moved = 0;
 
@@ -680,6 +685,8 @@ export class ProcessorService {
         `[ProcessorService] ${moved} rows reference unknown accounts | file=${fileId}`
       );
     }
+
+    return known;
   }
 
   /* =======================================================

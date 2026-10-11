@@ -233,7 +233,10 @@ export class MLClient {
         unknown
       >
     >,
-    rowNumbers: number[]
+    rowNumbers: number[],
+    // Account info read from the Account table, for the rules that need it
+    // (T-N11 overdraft, T-N12 night transfer from a retail account)
+    accounts: Record<string, { account_type: string; balance: string; currency: string }> = {}
   ): Promise<AnomalyFlagsResponse> {
     const endpoint =
       '/anomaly/detect-batch';
@@ -276,6 +279,7 @@ export class MLClient {
             fileType,
             rows,
             rowNumbers,
+            accounts,
           }
         );
 

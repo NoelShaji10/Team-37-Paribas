@@ -79,11 +79,17 @@ class AnomalyDetectorService:
         return flags
 
     def detect_batch(self, file_id: str, file_type: str, rows: list[dict[str, Any]],
-                     row_numbers: list[int] | None = None) -> list[dict]:
-        """Row-level checks for one batch of Layer-1-valid rows."""
+                     row_numbers: list[int] | None = None,
+                     accounts: dict[str, dict[str, Any]] | None = None) -> list[dict]:
+        """Row-level checks for one batch of Layer-1-valid rows.
+        accounts: {account_number: {account_type, balance, currency}} read by the backend from the
+        Account table, for the rules that need the account (T-N11 overdraft, T-N12 night transfer)."""
         if not rows:
             return []
         s = self._session(file_id, file_type)
+        if accounts:
+            s.detector.lookups.setdefault("accounts", {}).update(
+                {str(k).strip().upper(): v for k, v in accounts.items()})
         start = len(s.row_map) + 1
         s.row_map.extend(row_numbers if row_numbers and len(row_numbers) == len(rows)
                          else range(start, start + len(rows)))
