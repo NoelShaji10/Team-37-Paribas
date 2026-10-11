@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.services.time_predictor import time_predictor
 
@@ -9,6 +9,8 @@ router = APIRouter()
 
 
 class TimePredictionRequest(BaseModel):
+    model_config = ConfigDict(json_schema_extra={"examples": [{"fileType": "BANK_TRANSACTIONS", "rowCount": 100000, "sizeBytes": 9279263, "concurrency": 2}]})
+
     fileType: Optional[str] = None      # ACCOUNTS | BANK_TRANSACTIONS | PAYMENTS | RATES
     rowCount: int = 100
     sizeBytes: Optional[int] = None

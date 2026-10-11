@@ -1,7 +1,7 @@
 from typing import Optional
 
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.services.file_validator import file_validator
 
@@ -9,6 +9,8 @@ router = APIRouter()
 
 
 class FileValidationRequest(BaseModel):
+    model_config = ConfigDict(json_schema_extra={"examples": [{"path": "/Users/you/Team-37-Paribas/demo/bank_txns_demo.csv", "fileName": "bank_txns_demo.csv"}]})
+
     path: str                       # absolute path on this machine (backend and ML service share the disk)
     fileName: Optional[str] = None  # original name, when the stored file was renamed
 

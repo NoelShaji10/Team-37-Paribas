@@ -3,7 +3,7 @@ older shape (field, invalidValue). Uses the same engine as /normalize/suggest.""
 from typing import Any, Dict, Optional
 
 from fastapi import APIRouter
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from app.services.normalizer import normalizer
 
@@ -11,6 +11,8 @@ router = APIRouter()
 
 
 class SuggestionRequest(BaseModel):
+    model_config = ConfigDict(json_schema_extra={"examples": [{"fieldName": "currency", "originalValue": "USX", "context": {}}]})
+
     fieldName: Optional[str] = None
     originalValue: Optional[str] = None
     context: Dict[str, Any] = {}

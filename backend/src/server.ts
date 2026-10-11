@@ -7,6 +7,8 @@ import dotenv from 'dotenv';
 import http from 'http';
 
 import fileRoutes from './routes/files';
+import swaggerUi from 'swagger-ui-express';
+import { openapiSpec } from './docs/openapi';
 import { initSocket } from './sockets/socket';
 import { logger } from './utils/logger';
 import { fileWorker } from './workers/fileWorker';
@@ -57,6 +59,12 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/api/files', fileRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/resolutions', resolutionRoutes);
+
+// API documentation (Swagger UI): http://localhost:5000/api/docs
+app.get('/api/openapi.json', (_req: Request, res: Response) => {
+  res.json(openapiSpec);
+});
+app.use('/api/docs', swaggerUi.serve, swaggerUi.setup(openapiSpec));
 
 // 404
 app.use((_req: Request, res: Response) => {
