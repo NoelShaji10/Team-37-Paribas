@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 
 import { prisma } from '../db/prisma';
 import { logger } from '../utils/logger';
+import { beginIngestion, endIngestion, registerAccountsFile, waitForAccountsFiles } from '../services/dependencyGate';
 import { ingestionService } from '../services/ingestion';
 import { fileWorker } from '../workers/fileWorker';
 import { emitFileProgress } from '../sockets/socket';
@@ -38,11 +39,20 @@ export const uploadFile = async (
       `[FileController] Received file: ${file.originalname}`
     );
 
-    const ingestionResult =
-      await ingestionService.ingestFile(
-        file.path,
-        file.originalname
-      );
+    beginIngestion();
+    let ingestionResult;
+    try {
+      ingestionResult =
+        await ingestionService.ingestFile(
+          file.path,
+          file.originalname
+        );
+      if (ingestionResult.status === 'QUEUED' && ingestionResult.fileType === 'ACCOUNTS') {
+        registerAccountsFile(ingestionResult.fileId);
+      }
+    } finally {
+      endIngestion();
+    }
 
     if (ingestionResult.status === 'QUARANTINED') {
       res.status(422).json({
@@ -57,11 +67,12 @@ export const uploadFile = async (
       .toString(36)
       .substring(2, 8)}`;
 
-    fileWorker.enqueue({
-      jobId,
-      fileId: ingestionResult.fileId,
-      filePath: file.path,
-    });
+    // Transactions / payments uploaded together with accounts wait for them (in the background,
+    // so the upload response is not delayed); the file shows as QUEUED meanwhile.
+    const queued = { jobId, fileId: ingestionResult.fileId, filePath: file.path };
+    void waitForAccountsFiles(ingestionResult.fileType, file.originalname).then(() =>
+      fileWorker.enqueue(queued)
+    );
 
     emitFileProgress(
       ingestionResult.fileId,

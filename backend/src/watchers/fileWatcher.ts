@@ -4,6 +4,7 @@ import chokidar from 'chokidar';
 import { ingestionService } from '../services/ingestion';
 import { fileWorker } from '../workers/fileWorker';
 import { logger } from '../utils/logger';
+import { beginIngestion, endIngestion, registerAccountsFile, waitForAccountsFiles } from '../services/dependencyGate';
 import {
   INCOMING_DIR,
   archiveFile,
@@ -52,13 +53,25 @@ export function startFileWatcher(): void {
     try {
       logger.info(`[FileWatcher] New file detected: ${fileName}`);
 
-      const result = await ingestionService.ingestFile(filePath, fileName);
+      let result;
+      beginIngestion();
+      try {
+        result = await ingestionService.ingestFile(filePath, fileName);
+        if (result.status === 'QUEUED' && result.fileType === 'ACCOUNTS') {
+          registerAccountsFile(result.fileId);
+        }
+      } finally {
+        endIngestion();
+      }
 
       if (result.status === 'QUARANTINED') {
         // ingestion.ts already moved it to quarantine/ and recorded the reason
         logger.warn(`[FileWatcher] ${fileName} quarantined: ${result.quarantineReason}`);
         return;
       }
+
+      // Transactions / payments wait until accounts arriving at the same time are loaded
+      await waitForAccountsFiles(result.fileType, fileName);
 
       fileWorker.enqueue({
         jobId: `folder_${Date.now()}`,

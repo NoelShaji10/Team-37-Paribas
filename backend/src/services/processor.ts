@@ -6,6 +6,7 @@ import { prisma } from '../db/prisma';
 import { logger } from '../utils/logger';
 import { emitDashboardAlert, emitFileProgress } from '../sockets/socket';
 import { archiveFile, type ArchiveStage } from '../utils/fileUtils';
+import { fileFinished } from './dependencyGate';
 
 import { validatorService } from './validator';
 import { loaderService } from './loader';
@@ -209,6 +210,7 @@ export class ProcessorService {
 
       // Move the source file out of incoming/ (or uploads/) into processed/
       await this.archiveSource(fileId, filePath, 'processed');
+      fileFinished(fileId); // lets waiting transactions / payments start
     } catch (error) {
       const message =
         error instanceof Error
@@ -261,6 +263,7 @@ export class ProcessorService {
 
       // Failed files go to quarantine/ so they can be inspected and dropped again
       await this.archiveSource(fileId, filePath, 'quarantine');
+      fileFinished(fileId);
 
       throw error;
     }
