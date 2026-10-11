@@ -16,7 +16,7 @@ const prisma = global.__prisma ??
         adapter,
         log: process.env.NODE_ENV === 'development'
             ? ['query', 'warn', 'error']
-            : ['error'],
+            : ['warn', 'error'],
     });
 exports.prisma = prisma;
 if (process.env.NODE_ENV !== 'production') {

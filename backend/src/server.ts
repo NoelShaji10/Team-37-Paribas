@@ -1,6 +1,7 @@
 import { startFileWatcher } from './watchers/fileWatcher';
 import dashboardRoutes from './routes/dashboard';
 import resolutionRoutes from './routes/resolutions';
+import settingsRoutes from './routes/settings';
 import express, { NextFunction, Request, Response } from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
@@ -57,6 +58,7 @@ app.get('/health', (_req: Request, res: Response) => {
 app.use('/api/files', fileRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/resolutions', resolutionRoutes);
+app.use('/api/settings', settingsRoutes);
 
 // 404
 app.use((_req: Request, res: Response) => {

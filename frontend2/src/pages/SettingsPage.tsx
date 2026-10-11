@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Settings,
   Cpu,
@@ -8,7 +8,16 @@ import {
   Save,
   RotateCcw,
   CheckCircle2,
+  AlertTriangle,
 } from "lucide-react";
+
+import {
+  getWorkerSettings,
+  updateWorkerConcurrency,
+  type WorkerStats,
+} from "../services/settingsApi";
+
+const CONCURRENCY_CHOICES = [1, 2, 3, 4, 5, 6, 8, 10, 15, 20];
 
 interface SettingsPageProps {
   onBack: () => void;
@@ -53,6 +62,50 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
     useState<AppSettings>({ ...defaultSettings });
   const [saved, setSaved] = useState(false);
 
+  // Live worker pool state from the backend
+  const [worker, setWorker] = useState<WorkerStats | null>(null);
+  const [workerError, setWorkerError] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
+
+  const loadWorker = useCallback(async (syncSelection: boolean) => {
+    try {
+      const stats = await getWorkerSettings();
+      setWorker(stats);
+      setWorkerError(null);
+
+      if (syncSelection) {
+        setSettings((current) => ({
+          ...current,
+          maxConcurrentFiles: stats.maxConcurrentJobs,
+        }));
+      }
+    } catch (error) {
+      setWorkerError(
+        error instanceof Error
+          ? `Could not reach the backend: ${error.message}`
+          : "Could not reach the backend"
+      );
+    }
+  }, []);
+
+  // Load the real value once, then refresh the running/queued counts.
+  useEffect(() => {
+    loadWorker(true);
+    const interval = window.setInterval(() => loadWorker(false), 3000);
+    return () => window.clearInterval(interval);
+  }, [loadWorker]);
+
+  const concurrencyOptions = (() => {
+    const min = worker?.minConcurrency ?? 1;
+    const max = worker?.maxConcurrency ?? 20;
+    const values = new Set(
+      CONCURRENCY_CHOICES.filter((v) => v >= min && v <= max)
+    );
+    values.add(settings.maxConcurrentFiles);
+    if (worker) values.add(worker.maxConcurrentJobs);
+    return [...values].sort((a, b) => a - b);
+  })();
+
   const updateSetting = <K extends keyof AppSettings>(
     key: K,
     value: AppSettings[K]
@@ -64,15 +117,43 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
     setSaved(false);
   };
 
-  const handleSave = () => {
-    // Demo only: this does not save to a backend or persistent storage.
-    setSaved(true);
+  const handleSave = async () => {
+    setSaving(true);
+    setSaved(false);
+
+    try {
+      // Concurrency is applied on the server immediately.
+      if (
+        !worker ||
+        worker.maxConcurrentJobs !== settings.maxConcurrentFiles
+      ) {
+        const stats = await updateWorkerConcurrency(
+          settings.maxConcurrentFiles
+        );
+        setWorker(stats);
+      }
+
+      setWorkerError(null);
+      setSaved(true);
+    } catch (error) {
+      setWorkerError(
+        error instanceof Error
+          ? `Could not save: ${error.message}`
+          : "Could not save settings"
+      );
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleReset = () => {
     setSettings({ ...defaultSettings });
     setSaved(false);
   };
+
+  const concurrencyChanged =
+    worker != null &&
+    worker.maxConcurrentJobs !== settings.maxConcurrentFiles;
 
   const toggleOptions = [
     {
@@ -147,15 +228,36 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
       <div className="settings-demo-notice">
         <Settings size={18} />
         <span>
-          Demo mode — settings are held in frontend state and reset when
-          the page is reloaded.
+          Maximum concurrent files is saved on the server and applies
+          immediately. The other settings are still demo-only and reset
+          when the page is reloaded.
         </span>
       </div>
 
       {saved && (
         <div className="settings-saved-message" role="status">
           <CheckCircle2 size={18} />
-          Settings updated in this demo session.
+          Settings saved. The server now processes up to{" "}
+          {worker?.maxConcurrentJobs ?? settings.maxConcurrentFiles}{" "}
+          {(worker?.maxConcurrentJobs ?? settings.maxConcurrentFiles) === 1
+            ? "file"
+            : "files"}{" "}
+          at a time.
+        </div>
+      )}
+
+      {workerError && (
+        <div
+          className="settings-saved-message"
+          role="alert"
+          style={{
+            background: "#fdecec",
+            color: "#b42318",
+            borderColor: "#f5c2c0",
+          }}
+        >
+          <AlertTriangle size={18} />
+          {workerError}
         </div>
       )}
 
@@ -178,11 +280,26 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                 Maximum concurrent files
               </label>
               <p>Number of files to process at the same time.</p>
+              <p>
+                {worker ? (
+                  <>
+                    Live: <strong>{worker.activeJobs}</strong> running ·{" "}
+                    <strong>{worker.queuedJobs}</strong> queued · server
+                    limit <strong>{worker.maxConcurrentJobs}</strong>
+                    {concurrencyChanged && " (unsaved change)"}
+                  </>
+                ) : workerError ? (
+                  "Server status unavailable"
+                ) : (
+                  "Loading server status…"
+                )}
+              </p>
             </div>
 
             <select
               id="maxConcurrentFiles"
               value={settings.maxConcurrentFiles}
+              disabled={!worker}
               onChange={(event) =>
                 updateSetting(
                   "maxConcurrentFiles",
@@ -190,12 +307,11 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
                 )
               }
             >
-              <option value={1}>1 file</option>
-              <option value={2}>2 files</option>
-              <option value={3}>3 files</option>
-              <option value={5}>5 files</option>
-              <option value={10}>10 files</option>
-              <option value={20}>20 files</option>
+              {concurrencyOptions.map((value) => (
+                <option key={value} value={value}>
+                  {value} {value === 1 ? "file" : "files"}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -398,9 +514,10 @@ export default function SettingsPage({ onBack }: SettingsPageProps) {
           className="primary-button"
           type="button"
           onClick={handleSave}
+          disabled={saving}
         >
           <Save size={17} />
-          Save Settings
+          {saving ? "Saving…" : "Save Settings"}
         </button>
       </div>
     </div>
