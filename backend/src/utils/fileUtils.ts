@@ -52,11 +52,14 @@ export function moveFile(sourcePath: string, destinationPath: string): void {
 function archiveDestination(sourcePath: string, stage: ArchiveStage): string {
   const dir = stage === 'processed' ? PROCESSED_DIR : QUARANTINE_DIR;
   const stamp = new Date().toISOString().replace('T', '_').replace(/:/g, '-').replace(/\..+$/, '');
-  const name = path.basename(sourcePath);
+  // Keep the original name first (accounts_demo__2026-10-11_03-13-23.csv), so an archived copy
+  // dropped back into incoming/ still starts with its file type and passes the file-name check.
+  const ext = path.extname(sourcePath);
+  const stem = path.basename(sourcePath, ext);
 
-  let candidate = path.join(dir, `${stamp}_${name}`);
+  let candidate = path.join(dir, `${stem}__${stamp}${ext}`);
   for (let n = 1; fs.existsSync(candidate); n++) {
-    candidate = path.join(dir, `${stamp}_${n}_${name}`);
+    candidate = path.join(dir, `${stem}__${stamp}_${n}${ext}`);
   }
   return candidate;
 }

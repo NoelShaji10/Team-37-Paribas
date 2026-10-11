@@ -20,7 +20,11 @@ if PYTHON_DIR not in sys.path:
 
 import file_level_validation as flv  # noqa: E402  (Tiya's module)
 
-flv.FILENAME_RE = re.compile(r"^(accounts|bank_txns|payments|rates)_[A-Za-z0-9_\-, ]+\.csv$", re.IGNORECASE)
+# Also accepts an archive timestamp in front ("2026-10-11_03-13-23_accounts_demo.csv"), the name an
+# earlier version gave files moved to processed/, so such copies can be dropped back into incoming/.
+flv.FILENAME_RE = re.compile(
+    r"^(?:\d{4}-\d{2}-\d{2}_\d{2}-\d{2}-\d{2}_(?:\d+_)?)?"
+    r"(accounts|bank_txns|payments|rates)_[A-Za-z0-9_\-, ]+\.csv$", re.IGNORECASE)
 
 
 class _NoRegistry:
