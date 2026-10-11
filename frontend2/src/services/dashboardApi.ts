@@ -86,6 +86,36 @@ export async function getDashboardSummary():
   return readResponse(response);
 }
 
+export function subscribeDashboardSummary(
+  onUpdate: (data: DashboardSummary) => void
+): () => void {
+  const eventSource = new EventSource(
+    `${API_BASE}/dashboard/summarySSE`
+  );
+
+  eventSource.addEventListener('dashboard-summary', (event) => {
+    try {
+      const response = JSON.parse(
+        (event as MessageEvent).data
+      );
+
+      if (response.success && response.data) {
+        onUpdate(response.data as DashboardSummary);
+      }
+    } catch (error) {
+      console.error('Failed to parse dashboard SSE:', error);
+    }
+  });
+
+  eventSource.onerror = (error) => {
+    console.error('Dashboard SSE connection error:', error);
+  };
+
+  return () => {
+    eventSource.close();
+  };
+}
+
 export async function getDashboardFiles():
   Promise<DashboardFile[]> {
   const response = await fetch(

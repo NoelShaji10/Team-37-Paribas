@@ -35,6 +35,7 @@ import SettingsPage from "./SettingsPage";
 
 import {
   getDashboardData,
+  subscribeDashboardSummary,
   type DashboardFile,
   type DashboardSummary,
 } from "../services/dashboardApi";
@@ -277,6 +278,34 @@ export default function Dashboard() {
   /* -------------------------------------------------------
      Fetch dashboard backend data
      ------------------------------------------------------- */
+
+  useEffect(() => {
+    let mounted = true;
+
+    // Initial fetch
+    // getDashboardSummary()
+    //   .then((data) => {
+    //     if (mounted) {
+    //       setDashboardData(data);
+    //     }
+    //   })
+    //   .catch((error) => {
+    //     console.error('Initial dashboard fetch failed:', error);
+    //   });
+
+    // Real-time updates
+    const unsubscribe = subscribeDashboardSummary((data) => {
+      if (mounted) {
+        setDashboardSummary(data);
+        console.log(data)
+      }
+    });
+
+    return () => {
+      mounted = false;
+      unsubscribe();
+    };
+  }, []);
 
   const loadDashboard =
     useCallback(
