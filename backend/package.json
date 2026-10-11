@@ -12,6 +12,7 @@
     "prisma:seed": "tsx prisma/seed.ts"
   },
   "dependencies": {
+    "@prisma/adapter-pg": "^7.10.0",
     "@prisma/client": "^7.10.0",
     "chokidar": "^5.0.0",
     "cors": "^2.8.5",
@@ -19,6 +20,7 @@
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
     "multer": "^1.4.5-lts.1",
+    "pg": "^8.23.1",
     "socket.io": "^4.7.5"
   },
   "devDependencies": {

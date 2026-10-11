@@ -24,10 +24,12 @@ const prisma =
   global.__prisma ??
   new PrismaClient({
     adapter,
+    // SQL query logging is very noisy (every insert of every batch).
+    // Turn it on only when debugging: PRISMA_LOG_QUERIES=true in .env
     log:
-      process.env.NODE_ENV === 'development'
+      process.env.PRISMA_LOG_QUERIES === 'true'
         ? ['query', 'warn', 'error']
-        : ['error'],
+        : ['warn', 'error'],
   });
 
 if (process.env.NODE_ENV !== 'production') {
