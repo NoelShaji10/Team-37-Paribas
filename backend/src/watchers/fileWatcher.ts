@@ -6,6 +6,10 @@ import { ingestionService } from '../services/ingestion';
 import { fileWorker } from '../workers/fileWorker';
 import { logger } from '../utils/logger';
 
+import { dashboardEvents } from '../services/dashboardEvents';
+
+
+
 const incomingFolder = path.join(
   __dirname,
   '../../incoming'

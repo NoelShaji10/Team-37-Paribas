@@ -5,17 +5,9 @@ import { logger } from '../utils/logger';
 import { fileWorker } from '../workers/fileWorker';
 import { Prisma } from '@prisma/client';
 
-/**
- * GET /api/dashboard/summary
- *
- * Returns live dashboard statistics from PostgreSQL.
- */
-export const getDashboardSummary = async (
-  _req: Request,
-  res: Response
-): Promise<void> => {
-  try {
-    const [
+
+const fetchDashboardSummary = async () => {
+  const [
       totalFiles,
       queuedFiles,
       activeProcessing,
@@ -31,7 +23,7 @@ export const getDashboardSummary = async (
 
       prisma.processingFile.count({
         where: {
-          status: 'QUEUED',
+          status: 'QUEUED'
         },
       }),
 
@@ -374,6 +366,18 @@ export const getDashboardSummary = async (
         formattedProcessingTimeHistory,
     };
 
+    return summary
+}
+
+
+
+export const getDashboardSummary = async (
+  _req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const summary = await fetchDashboardSummary();
+
     res.status(200).json({
       success: true,
       data: summary,
@@ -390,4 +394,75 @@ export const getDashboardSummary = async (
         'Failed to fetch dashboard summary',
     });
   }
+};
+
+
+export const getDashboardSummarySSE = (
+  req: Request,
+  res: Response
+) => {
+  // SSE response headers
+  res.setHeader("Content-Type", "text/event-stream");
+  res.setHeader("Cache-Control", "no-cache, no-transform");
+  res.setHeader("Connection", "keep-alive");
+  res.setHeader("X-Accel-Buffering", "no");
+
+  res.flushHeaders();
+
+  let isClosed = false;
+  let isFetching = false;
+
+  const sendSummary = async () => {
+    // Avoid overlapping database queries
+    if (isClosed || isFetching) return;
+
+    isFetching = true;
+
+    try {
+      const summary = await fetchDashboardSummary();
+
+
+      if (isClosed || res.destroyed) return;
+
+      res.write(
+        `event: dashboard-summary\n` +
+        `data: ${JSON.stringify({
+          success: true,
+          data: summary,
+          timestamp: new Date().toISOString(),
+        })}\n\n`
+      );
+    } catch (error) {
+      logger.error(
+        "[DashboardController] SSE summary error:",
+        error
+      );
+
+      if (!isClosed && !res.destroyed) {
+        res.write(
+          `event: dashboard-error\n` +
+          `data: ${JSON.stringify({
+            success: false,
+            message: "Failed to fetch dashboard summary",
+          })}\n\n`
+        );
+      }
+    } finally {
+      isFetching = false;
+    }
+  };
+
+  // Send the first snapshot immediately
+  void sendSummary();
+
+  // Send fresh dashboard data every 5 seconds
+  const interval = setInterval(() => {
+    void sendSummary();
+  }, 5000);
+
+  // Stop polling when the browser disconnects
+  req.on("close", () => {
+    isClosed = true;
+    clearInterval(interval);
+  });
 };
