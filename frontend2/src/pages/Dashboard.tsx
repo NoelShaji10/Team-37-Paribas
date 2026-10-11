@@ -16,7 +16,6 @@ import {
   ShieldAlert,
   Upload,
   WandSparkles,
-  BookOpen,
 } from "lucide-react";
 
 import DashboardCards from "../components/DashboardCards";
@@ -29,7 +28,6 @@ import ResolutionCentre from "./ResolutionCentre";
 import Analytics from "./Analytics";
 import MasterData from "./MasterData";
 import SettingsPage from "./SettingsPage";
-import ApiDocs from "./ApiDocs";
 
 import { useRealtimeFiles } from "../hooks/useRealtimeFiles";
 import { api } from "../services/api";
@@ -44,7 +42,6 @@ const navigation = [
   { label: "Analytics", icon: Activity },
   { label: "Master Data", icon: Database },
   { label: "Settings", icon: Settings },
-  { label: "API Docs", icon: BookOpen },
 ];
 
 const pageDescriptions: Record<string, string> = {
@@ -140,9 +137,6 @@ export default function Dashboard() {
 
   const renderPageIcon = () => {
     switch (activePage) {
-      case "API Docs":
-        return <BookOpen size={30} />;
-
       case "Analytics":
         return <Activity size={30} />;
 
@@ -332,13 +326,6 @@ export default function Dashboard() {
           {/* Settings */}
           {activePage === "Settings" && (
             <SettingsPage
-              onBack={() => setActivePage("Dashboard")}
-            />
-          )}
-
-          {/* API Docs: Swagger UI for the backend and the ML service */}
-          {activePage === "API Docs" && (
-            <ApiDocs
               onBack={() => setActivePage("Dashboard")}
             />
           )}
