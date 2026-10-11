@@ -1,30 +1,103 @@
 import fs from 'fs';
+import os from 'os';
 import path from 'path';
 
-/**
- * Ensures required storage directories exist.
- */
-export function ensureDirectories(): void {
-  const dirs = [
-    path.join(__dirname, '../../uploads'),
-    path.join(__dirname, '../../quarantine'),
-    path.join(__dirname, '../../processed')
-  ];
+import { logger } from './logger';
 
-  dirs.forEach((dir) => {
-    if (!fs.existsSync(dir)) {
-      fs.mkdirSync(dir, { recursive: true });
-    }
+const BACKEND_ROOT = path.join(__dirname, '../..');
+
+/**
+ * Where files arrive, and where they go afterwards.
+ *
+ * By default everything lives inside backend/ (incoming/, processed/, quarantine/).
+ * Set FILE_DROP_ROOT in backend/.env (e.g. FILE_DROP_ROOT=~/BankDrop) to use a shared folder
+ * instead: the same three subfolders are created there, so people dropping files can also
+ * see what was processed and what was quarantined.
+ */
+function expandHome(p: string): string {
+  return p.startsWith('~') ? path.join(os.homedir(), p.slice(1)) : p;
+}
+
+const DROP_ROOT = process.env.FILE_DROP_ROOT?.trim()
+  ? path.resolve(expandHome(process.env.FILE_DROP_ROOT.trim()))
+  : BACKEND_ROOT;
+
+export const INCOMING_DIR = path.join(DROP_ROOT, 'incoming');
+export const PROCESSED_DIR = path.join(DROP_ROOT, 'processed');
+export const QUARANTINE_DIR = path.join(DROP_ROOT, 'quarantine');
+export const UPLOADS_DIR = path.join(BACKEND_ROOT, 'uploads');
+
+export type ArchiveStage = 'processed' | 'quarantine';
+
+export function ensureDirectories(): void {
+  [INCOMING_DIR, UPLOADS_DIR, PROCESSED_DIR, QUARANTINE_DIR].forEach((dir) => {
+    if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
   });
 }
 
-/**
- * Safely moves a file between stages (e.g., uploads -> processed or quarantine).
- */
 export function moveFile(sourcePath: string, destinationPath: string): void {
   const targetDir = path.dirname(destinationPath);
-  if (!fs.existsSync(targetDir)) {
-    fs.mkdirSync(targetDir, { recursive: true });
+  if (!fs.existsSync(targetDir)) fs.mkdirSync(targetDir, { recursive: true });
+
+  try {
+    fs.renameSync(sourcePath, destinationPath);
+  } catch (error) {
+    // Different disks (e.g. a network share): copy, then delete
+    if ((error as NodeJS.ErrnoException).code !== 'EXDEV') throw error;
+    fs.copyFileSync(sourcePath, destinationPath);
+    fs.unlinkSync(sourcePath);
   }
-  fs.renameSync(sourcePath, destinationPath);
+}
+
+function archiveDestination(sourcePath: string, stage: ArchiveStage): string {
+  const dir = stage === 'processed' ? PROCESSED_DIR : QUARANTINE_DIR;
+  const stamp = new Date().toISOString().replace('T', '_').replace(/:/g, '-').replace(/\..+$/, '');
+  const name = path.basename(sourcePath);
+
+  let candidate = path.join(dir, `${stamp}_${name}`);
+  for (let n = 1; fs.existsSync(candidate); n++) {
+    candidate = path.join(dir, `${stamp}_${n}_${name}`);
+  }
+  return candidate;
+}
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+/** Moves a finished file to processed/ or quarantine/. Never throws. */
+export async function archiveFile(
+  sourcePath: string,
+  stage: ArchiveStage
+): Promise<string | null> {
+  if (!sourcePath || !fs.existsSync(sourcePath)) {
+    logger.warn(`[FileUtils] Nothing to archive, file not found: ${sourcePath}`);
+    return null;
+  }
+
+  const resolved = path.resolve(sourcePath);
+  if (
+    resolved.startsWith(path.resolve(PROCESSED_DIR) + path.sep) ||
+    resolved.startsWith(path.resolve(QUARANTINE_DIR) + path.sep)
+  ) {
+    return sourcePath; // already archived (e.g. quarantined during ingestion)
+  }
+
+  const destination = archiveDestination(sourcePath, stage);
+
+  // A file can be briefly locked right after reading (Windows, network shares), so retry.
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      moveFile(sourcePath, destination);
+      logger.info(`[FileUtils] Moved to ${stage}: ${sourcePath} -> ${destination}`);
+      return destination;
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      const retryable = code === 'EBUSY' || code === 'EPERM' || code === 'EACCES';
+      if (!retryable || attempt === 5) {
+        logger.error(`[FileUtils] Could not move ${sourcePath} to ${stage} (${code ?? 'error'})`, error);
+        return null;
+      }
+      await sleep(300 * attempt);
+    }
+  }
+  return null;
 }

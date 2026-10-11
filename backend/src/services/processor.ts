@@ -5,6 +5,7 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../db/prisma';
 import { logger } from '../utils/logger';
 import { emitDashboardAlert, emitFileProgress } from '../sockets/socket';
+import { archiveFile, type ArchiveStage } from '../utils/fileUtils';
 
 import { validatorService } from './validator';
 import { loaderService } from './loader';
@@ -205,6 +206,9 @@ export class ProcessorService {
           `rejected=${stats.rejectedRows} | ` +
           `anomalies=${stats.anomalyCount}`
       );
+
+      // Move the source file out of incoming/ (or uploads/) into processed/
+      await this.archiveSource(fileId, filePath, 'processed');
     } catch (error) {
       const message =
         error instanceof Error
@@ -255,7 +259,24 @@ export class ProcessorService {
         }
       );
 
+      // Failed files go to quarantine/ so they can be inspected and dropped again
+      await this.archiveSource(fileId, filePath, 'quarantine');
+
       throw error;
+    }
+  }
+
+  /**
+   * Moves the processed source file to processed/ or quarantine/ and records its new
+   * location in storedPath. Never throws: archiving must not change the file's result.
+   */
+  private async archiveSource(fileId: string, filePath: string, stage: ArchiveStage): Promise<void> {
+    const destination = await archiveFile(filePath, stage);
+    if (!destination || destination === filePath) return;
+    try {
+      await prisma.processingFile.update({ where: { id: fileId }, data: { storedPath: destination } });
+    } catch (error) {
+      logger.warn(`[ProcessorService] Could not record archived path | file=${fileId}`, error);
     }
   }
 

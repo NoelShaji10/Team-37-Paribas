@@ -11,6 +11,7 @@ import {
   FileCategory,
 } from './classifier';
 import { mlClient } from './mlClient';
+import { QUARANTINE_DIR } from '../utils/fileUtils';
 import { fileWorker } from '../workers/fileWorker';
 
 export interface IngestionResult {
@@ -117,9 +118,8 @@ export class IngestionService {
     const fileCheck = await mlClient.validateFile(filePath, originalName);
     if (fileCheck && !fileCheck.passed) {
       const reason = `Quarantined [${fileCheck.errorCode}]: ${fileCheck.reason}`;
-      const quarantineDir = path.join(__dirname, '../../quarantine');
-      await fs.promises.mkdir(quarantineDir, { recursive: true });
-      const quarantinedPath = path.join(quarantineDir, `${fileId}_${path.basename(originalName)}`);
+      await fs.promises.mkdir(QUARANTINE_DIR, { recursive: true });
+      const quarantinedPath = path.join(QUARANTINE_DIR, `${fileId}_${path.basename(originalName)}`);
       await fs.promises.rename(filePath, quarantinedPath).catch(async () => {
         await fs.promises.copyFile(filePath, quarantinedPath);
         await fs.promises.unlink(filePath);

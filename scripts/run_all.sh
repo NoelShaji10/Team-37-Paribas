@@ -51,4 +51,6 @@ echo "  Dashboard     http://localhost:5173"
 echo "  Backend API   http://localhost:5000/api/files"
 echo "  ML API docs   http://localhost:8000/docs"
 echo "  Logs          tail -f logs/backend.log logs/ml.log"
+DROP=$(grep -E '^FILE_DROP_ROOT=' "$ROOT/backend/.env" 2>/dev/null | cut -d= -f2- | tr -d '"' | tr -d "'" || true)
+echo "  Drop folder   ${DROP:-$ROOT/backend}/incoming"
 echo "Next: ./scripts/demo.sh    Stop: ./scripts/stop_all.sh"
